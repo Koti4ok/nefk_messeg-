@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Групи — НЕМК Мережа{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold text-primary mb-0"><i class="bi bi-people-fill me-2"></i>Групи та спільноти</h4>
+  <a href="{% url 'create_group' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>Створити групу
+  </a>
+</div>
+
+{% if my_groups %}
+<h6 class="text-muted fw-bold mb-3">Мої групи</h6>
+<div class="row g-3 mb-5">
+  {% for group in my_groups %}
+  <div class="col-md-4 col-sm-6">
+    <a href="{% url 'group_detail' group.pk %}" class="text-decoration-none">
+      <div class="card border-0 shadow-sm rounded-4 h-100">
+        <img src="{{ group.get_avatar_url }}" class="card-img-top rounded-top-4"
+             style="height:120px; object-fit:cover;" alt="{{ group.name }}">
+        <div class="card-body py-2 px-3">
+          <div class="fw-bold">{{ group.name }}</div>
+          <small class="text-muted">{{ group.member_count }} учасників</small>
+          {% if group.is_private %}<span class="badge bg-secondary ms-1">Приватна</span>{% endif %}
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<h6 class="text-muted fw-bold mb-3">Всі спільноти</h6>
+<div class="row g-3">
+  {% for group in all_groups %}
+  <div class="col-md-4 col-sm-6">
+    <a href="{% url 'group_detail' group.pk %}" class="text-decoration-none">
+      <div class="card border-0 shadow-sm rounded-4 h-100">
+        <img src="{{ group.get_avatar_url }}" class="card-img-top rounded-top-4"
+             style="height:120px; object-fit:cover;" alt="{{ group.name }}">
+        <div class="card-body py-2 px-3">
+          <div class="fw-bold text-dark">{{ group.name }}</div>
+          <small class="text-muted">{{ group.member_count }} учасників</small>
+          {% if group.is_private %}<span class="badge bg-secondary ms-1">Приватна</span>{% endif %}
+          {% if group.description %}
+          <p class="small text-muted mt-1 mb-0">{{ group.description|truncatechars:60 }}</p>
+          {% endif %}
+        </div>
+      </div>
+    </a>
+  </div>
+  {% empty %}
+  <div class="col-12 text-center text-muted py-5">
+    <i class="bi bi-people fs-1 d-block mb-2"></i>
+    Поки немає груп. <a href="{% url 'create_group' %}">Створіть першу!</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Реєстрація — НЕМК Мережа{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card shadow border-0 rounded-4">
+      <div class="card-body p-4">
+        <h3 class="text-center text-primary fw-bold mb-1">
+          <i class="bi bi-person-plus-fill me-2"></i>Реєстрація
+        </h3>
+        <p class="text-center text-muted small mb-4">Приєднуйся до НЕМК Мережі</p>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% for field in form %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-primary w-100 mt-2">
+            <i class="bi bi-check-lg me-1"></i>Зареєструватись
+          </button>
+        </form>
+        <hr>
+        <p class="text-center mb-0 small">
+          Вже є акаунт? <a href="{% url 'login' %}" class="text-primary fw-semibold">Увійти</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

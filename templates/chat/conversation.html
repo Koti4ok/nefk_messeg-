@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% block title %}{{ conv_name }} — Чат{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <!-- Header -->
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <a href="{% url 'conversations' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <h5 class="fw-bold mb-0 flex-grow-1">
+        <i class="bi bi-chat-dots me-2 text-primary"></i>
+        {{ conv_name }}
+      </h5>
+      {% if conversation.is_group %}
+      <span class="badge bg-primary"><i class="bi bi-people me-1"></i>Груповий</span>
+      {% endif %}
+    </div>
+
+    <!-- Messages window -->
+    <div class="card border-0 shadow-sm rounded-4 mb-3">
+      <div class="card-body p-3 d-flex flex-column"
+           style="height: 62vh; overflow-y: auto;" id="chat-messages">
+        {% for msg in chat_messages %}
+        <div class="d-flex {% if msg.sender == request.user %}justify-content-end{% endif %} mb-2" id="msg-{{ msg.id }}">
+          {% if msg.sender != request.user %}
+          <img src="{{ msg.sender.get_avatar_url }}" class="rounded-circle me-2 align-self-end"
+               width="28" height="28" style="object-fit:cover;">
+          {% endif %}
+          <div class="px-3 py-2 rounded-4 {% if msg.sender == request.user %}bg-primary text-white{% else %}bg-light{% endif %}"
+               style="max-width:70%;">
+            {% if conversation.is_group and msg.sender != request.user %}
+            <div class="fw-semibold small text-primary mb-1">
+              {{ msg.sender.get_full_name|default:msg.sender.username }}
+            </div>
+            {% endif %}
+            {% if msg.content %}<div>{{ msg.content }}</div>{% endif %}
+            {% if msg.image %}<img src="{{ msg.image.url }}" class="img-fluid rounded mt-1" style="max-width:180px;" alt="">{% endif %}
+            {% if msg.file %}
+            <a href="{{ msg.file.url }}"
+               class="{% if msg.sender == request.user %}text-white{% else %}text-primary{% endif %} small">
+              <i class="bi bi-paperclip me-1"></i>Файл
+            </a>
+            {% endif %}
+            <div class="{% if msg.sender == request.user %}text-white-50{% else %}text-muted{% endif %} mt-1"
+                 style="font-size:0.68rem; text-align:right;">
+              {{ msg.created_at|date:"H:i" }}
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="text-center text-muted mt-auto mb-auto py-5">
+          <i class="bi bi-chat-square fs-1 d-block mb-2 opacity-25"></i>
+          Початок розмови
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Send form -->
+    <div class="card border-0 shadow-sm rounded-4">
+      <div class="card-body p-2">
+        <form method="post" enctype="multipart/form-data" id="send-form">
+          {% csrf_token %}
+          <div class="d-flex gap-2 align-items-center">
+            <label class="btn btn-outline-secondary btn-sm mb-0" title="Фото">
+              <i class="bi bi-image"></i>
+              {{ form.image }}
+            </label>
+            <label class="btn btn-outline-secondary btn-sm mb-0" title="Файл">
+              <i class="bi bi-paperclip"></i>
+              {{ form.file }}
+            </label>
+            <div class="flex-grow-1">{{ form.content }}</div>
+            <button type="submit" class="btn btn-primary px-3" id="send-btn">
+              <i class="bi bi-send-fill"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const chatMessages = document.getElementById('chat-messages');
+const convPk = {{ conversation.pk }};
+const currentUser = '{{ request.user.username|escapejs }}';
+const sendForm = document.getElementById('send-form');
+const msgInput = document.getElementById('msg-input');
+
+function scrollBottom() {
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+scrollBottom();
+
+function appendMessage(m, isMe) {
+  if (document.getElementById('msg-' + m.id)) return;
+  const div = document.createElement('div');
+  div.className = `d-flex ${isMe ? 'justify-content-end' : ''} mb-2`;
+  div.id = `msg-${m.id}`;
+  div.innerHTML = `
+    ${!isMe ? `<img src="${m.avatar}" class="rounded-circle me-2 align-self-end" width="28" height="28" style="object-fit:cover;" alt="">` : ''}
+    <div class="px-3 py-2 rounded-4 ${isMe ? 'bg-primary text-white' : 'bg-light'}" style="max-width:70%;">
+      <div>${m.content}</div>
+      <div class="${isMe ? 'text-white-50' : 'text-muted'} mt-1" style="font-size:0.68rem;text-align:right;">${m.time}</div>
+    </div>`;
+  chatMessages.appendChild(div);
+  scrollBottom();
+}
+
+// ── WebSocket ─────────────────────────────────────────────────────
+const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+const wsUrl = `${wsProtocol}://${window.location.host}/ws/chat/${convPk}/`;
+let socket = null;
+let wsReady = false;
+
+function connectWS() {
+  socket = new WebSocket(wsUrl);
+  socket.onopen  = () => { wsReady = true; };
+  socket.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if (data.type === 'message') {
+      appendMessage(
+        { id: data.id, content: data.content, avatar: data.avatar, time: data.time },
+        data.sender === currentUser
+      );
+    }
+  };
+  socket.onclose = () => { wsReady = false; setTimeout(startPolling, 1000); };
+  socket.onerror = () => { socket.close(); };
+}
+
+// ── Fallback HTTP polling ─────────────────────────────────────────
+let pollingActive = false;
+let lastId = {% if chat_messages.last %}{{ chat_messages.last.pk }}{% else %}0{% endif %};
+
+function startPolling() {
+  if (pollingActive || wsReady) return;
+  pollingActive = true;
+  (function poll() {
+    if (wsReady) { pollingActive = false; return; }
+    fetch(`/chat/${convPk}/messages/?last_id=${lastId}`)
+      .then(r => r.json())
+      .then(data => {
+        data.messages.forEach(m => { lastId = m.id; appendMessage(m, m.is_me); });
+        setTimeout(poll, 3000);
+      })
+      .catch(() => setTimeout(poll, 5000));
+  })();
+}
+
+// ── Send via WebSocket ────────────────────────────────────────────
+sendForm.addEventListener('submit', function(e) {
+  const content = msgInput ? msgInput.value.trim() : '';
+  const hasFiles = [...sendForm.querySelectorAll('input[type=file]')].some(i => i.files.length > 0);
+  if (hasFiles || !content || !wsReady) return; // fallback to normal POST
+  e.preventDefault();
+  socket.send(JSON.stringify({ content }));
+  msgInput.value = '';
+});
+
+connectWS();
+</script>
+{% endblock %}

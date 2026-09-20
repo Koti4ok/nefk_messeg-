@@ -1,0 +1,666 @@
+{% extends 'base.html' %}
+{% block title %}Стрічка — НЕМК Суспільство{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <!-- ══ LEFT SIDEBAR ════════════════════════════════════════ -->
+  <div class="col-lg-3 d-none d-lg-block">
+    <div class="sidebar-widget">
+
+      <!-- Profile preview -->
+      <a href="{% url 'profile' request.user.username %}"
+         class="text-decoration-none d-flex align-items-center gap-3 mb-3 pb-3"
+         style="border-bottom:1px solid var(--divider);">
+        <div style="position:relative;">
+          <img src="{{ request.user.get_avatar_url }}" class="rounded-circle"
+               style="object-fit:cover;border:2px solid var(--border);" width="46" height="46"
+               alt="{{ request.user.username }}">
+          <span style="position:absolute;bottom:1px;right:1px;width:11px;height:11px;
+                       border-radius:50%;background:var(--green);border:2px solid var(--card-solid);"
+                aria-hidden="true"></span>
+        </div>
+        <div>
+          <div class="fw-bold small" style="color:var(--text);">
+            {{ request.user.get_full_name|default:request.user.username }}
+          </div>
+          <div class="small" style="color:var(--muted);">@{{ request.user.username }}</div>
+        </div>
+      </a>
+
+      <!-- Nav links -->
+      <a href="{% url 'feed' %}"          class="sidebar-link"><span class="s-icon" style="background:rgba(99,102,241,.12);">🏠</span> Стрічка</a>
+      <a href="{% url 'friends' %}"       class="sidebar-link"><span class="s-icon" style="background:rgba(244,114,182,.12);">👥</span> Друзі</a>
+      <a href="{% url 'groups' %}"        class="sidebar-link"><span class="s-icon" style="background:rgba(251,191,36,.12);">📁</span> Групи</a>
+      <a href="{% url 'conversations' %}" class="sidebar-link"><span class="s-icon" style="background:rgba(52,211,153,.12);">💬</span> Повідомлення</a>
+      <a href="{% url 'notifications' %}" class="sidebar-link"><span class="s-icon" style="background:rgba(248,113,113,.12);">🔔</span> Сповіщення</a>
+      <a href="{% url 'search_users' %}"  class="sidebar-link"><span class="s-icon" style="background:rgba(129,140,248,.12);">🔍</span> Пошук</a>
+    </div>
+  </div>
+
+  <!-- ══ MAIN FEED ════════════════════════════════════════════ -->
+  <div class="col-lg-6">
+
+    <!-- ── POST COMPOSER ──────────────────────────────────── -->
+    <div class="post-composer mb-3">
+      <form method="post" enctype="multipart/form-data" id="post-form">
+        {% csrf_token %}
+
+        <!-- Avatar + textarea -->
+        <div class="d-flex gap-3 p-3 pb-0">
+          <img src="{{ request.user.get_avatar_url }}" class="rounded-circle flex-shrink-0"
+               style="object-fit:cover;border:2px solid var(--border);" width="40" height="40"
+               alt="{{ request.user.username }}">
+          <textarea name="content" class="composer-textarea" id="composer-text"
+                    placeholder="Що у тебе нового? Поділись з НЕМК спільнотою ✨"
+                    aria-label="Текст публікації" maxlength="500"></textarea>
+        </div>
+
+        <!-- Char counter -->
+        <div class="px-3 pb-0 text-end">
+          <span class="composer-char-count" id="char-count" aria-live="polite">0 / 500</span>
+        </div>
+
+        <!-- Mood pills (static, no Django |split) -->
+        <div class="composer-mood" role="group" aria-label="Настрій публікації">
+          <button type="button" class="mood-btn active" data-mood="">😊 Загальне</button>
+          <button type="button" class="mood-btn" data-mood="study">📚 Навчання</button>
+          <button type="button" class="mood-btn" data-mood="sport">⚽ Спорт</button>
+          <button type="button" class="mood-btn" data-mood="event">🎉 Подія</button>
+          <button type="button" class="mood-btn" data-mood="question">🤔 Питання</button>
+          <button type="button" class="mood-btn" data-mood="announce">📢 Оголошення</button>
+        </div>
+
+        <!-- Image previews -->
+        <div class="img-preview-strip" id="img-preview-strip" aria-label="Прев'ю зображень"></div>
+
+        <!-- Drop zone -->
+        <div class="drop-zone" id="drop-zone"
+             ondragover="event.preventDefault();this.classList.add('active')"
+             ondragleave="this.classList.remove('active')"
+             ondrop="handleDrop(event)"
+             role="region" aria-label="Зона перетягування файлів">
+          <i class="bi bi-cloud-upload fs-3 d-block mb-1" aria-hidden="true"></i>
+          Перетягни фото сюди
+        </div>
+
+        <!-- Emoji panel — buttons injected by JS below -->
+        <div class="emoji-panel" id="emoji-panel" aria-label="Вибір emoji"></div>
+
+        <!-- Hidden inputs -->
+        <input type="hidden" name="post_type" id="post-type-input" value="status">
+        <input type="file" name="image" id="img-file-input" accept="image/*" multiple
+               class="d-none" onchange="previewImages(this)" aria-label="Завантажити фото">
+        <input type="file" name="video" id="vid-file-input" accept="video/*"
+               class="d-none" aria-label="Завантажити відео">
+
+        <!-- Toolbar -->
+        <div class="composer-toolbar">
+          <button type="button" class="composer-tool-btn" title="Фото"
+                  aria-label="Завантажити фото"
+                  onclick="document.getElementById('img-file-input').click()">🖼️</button>
+          <button type="button" class="composer-tool-btn" title="Відео"
+                  aria-label="Завантажити відео"
+                  onclick="document.getElementById('vid-file-input').click()">🎬</button>
+          <button type="button" class="composer-tool-btn" title="Emoji"
+                  aria-label="Вибрати emoji" onclick="toggleEmojiPanel()">😄</button>
+          <button type="button" class="composer-tool-btn" title="Перетягнути файл"
+                  aria-label="Зона перетягування" onclick="toggleDropZone()">📎</button>
+          <button type="button" class="composer-tool-btn" title="GIF (незабаром)"
+                  aria-label="GIF незабаром" onclick="showFeedToast('GIF незабаром 🎬')">
+            <span style="font-size:.68rem;font-weight:800;
+                         background:linear-gradient(135deg,var(--p),var(--accent));
+                         -webkit-background-clip:text;-webkit-text-fill-color:transparent;">GIF</span>
+          </button>
+
+          <div class="ms-auto d-flex align-items-center gap-2">
+            <select class="form-select form-select-sm"
+                    style="width:auto;font-size:.76rem;padding:.2rem .55rem;"
+                    aria-label="Тип публікації"
+                    onchange="document.getElementById('post-type-input').value=this.value">
+              <option value="status">😊 Статус</option>
+              <option value="photo">📸 Фото</option>
+              <option value="video">🎥 Відео</option>
+              <option value="link">🔗 Посилання</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm px-3 fw-bold"
+                    id="post-submit-btn" disabled>
+              <i class="bi bi-send-fill me-1"></i>Опублікувати
+            </button>
+          </div>
+        </div>
+
+        <!-- Link input (shown when type=link) -->
+        <div id="link-input-wrap" class="px-3 pb-3 d-none">
+          <input type="url" name="link" class="form-control form-control-sm"
+                 placeholder="🔗 https://..." aria-label="Посилання">
+        </div>
+      </form>
+    </div><!-- /.post-composer -->
+
+    <!-- ── FILTER TABS ─────────────────────────────────────── -->
+    <div class="d-flex gap-2 mb-3 overflow-auto pb-1" style="scrollbar-width:none;" role="tablist" aria-label="Фільтр публікацій">
+      <button class="filter-tab active" onclick="filterPosts('all',this)"   role="tab" aria-selected="true">🌐 Всі</button>
+      <button class="filter-tab" onclick="filterPosts('study',this)"        role="tab" aria-selected="false">📚 Навчання</button>
+      <button class="filter-tab" onclick="filterPosts('sport',this)"        role="tab" aria-selected="false">⚽ Спорт</button>
+      <button class="filter-tab" onclick="filterPosts('event',this)"        role="tab" aria-selected="false">🎉 Події</button>
+      <button class="filter-tab" onclick="filterPosts('announce',this)"     role="tab" aria-selected="false">📢 Оголошення</button>
+    </div>
+
+    <!-- ── POSTS ──────────────────────────────────────────── -->
+    <div id="posts-container">
+      {% for post in posts %}
+      <article class="post-card" id="post-{{ post.pk }}"
+               style="animation-delay:{{ forloop.counter0 }}00ms">
+        <div class="card-body p-3">
+
+          <!-- Author header -->
+          <div class="d-flex align-items-start justify-content-between mb-2">
+            <a href="{% url 'profile' post.author.username %}"
+               class="d-flex align-items-center gap-2 text-decoration-none">
+              <div style="position:relative;">
+                <img src="{{ post.author.get_avatar_url }}" class="rounded-circle"
+                     style="object-fit:cover;border:2px solid var(--border);" width="42" height="42"
+                     alt="{{ post.author.username }}">
+                <span style="position:absolute;bottom:0;right:0;width:11px;height:11px;
+                             border-radius:50%;background:var(--green);border:2px solid var(--card-solid);"
+                      aria-hidden="true"></span>
+              </div>
+              <div>
+                <div class="fw-bold small" style="color:var(--text);">
+                  {{ post.author.get_full_name|default:post.author.username }}
+                </div>
+                <div style="color:var(--muted);font-size:.7rem;display:flex;align-items:center;gap:.3rem;">
+                  <i class="bi bi-clock" aria-hidden="true"></i>
+                  <time datetime="{{ post.created_at|date:'c' }}">{{ post.created_at|timesince }} тому</time>
+                  {% if post.group %}
+                  <span aria-hidden="true">·</span>
+                  <a href="{% url 'group_detail' post.group.pk %}"
+                     style="color:var(--p);text-decoration:none;">{{ post.group.name }}</a>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
+
+            <!-- Post menu -->
+            <div class="dropdown">
+              <button class="composer-tool-btn" data-bs-toggle="dropdown"
+                      aria-label="Меню публікації" style="font-size:1.2rem;color:var(--muted);">⋯</button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <a class="dropdown-item" href="{% url 'post_detail' post.pk %}">
+                    <i class="bi bi-box-arrow-up-right me-2"></i>Відкрити
+                  </a>
+                </li>
+                <li>
+                  <button class="dropdown-item"
+                          onclick="copyPostLink('{{ request.scheme }}://{{ request.get_host }}{% url 'post_detail' post.pk %}')">
+                    <i class="bi bi-link-45deg me-2"></i>Скопіювати посилання
+                  </button>
+                </li>
+                {% if request.user == post.author or request.user.is_admin_role %}
+                <li><hr class="dropdown-divider my-1"></li>
+                <li>
+                  <a class="dropdown-item" style="color:var(--danger);"
+                     href="{% url 'delete_post' post.pk %}"
+                     onclick="return confirm('Видалити публікацію?')">
+                    <i class="bi bi-trash me-2"></i>Видалити
+                  </a>
+                </li>
+                {% endif %}
+              </ul>
+            </div>
+          </div><!-- /author header -->
+
+          <!-- Repost notice -->
+          {% if post.original_post %}
+          <div class="mb-2 p-2 rounded-3 small"
+               style="background:var(--bg3);border-left:3px solid var(--p);">
+            🔁 Поширено від
+            <a href="{% url 'profile' post.original_post.author.username %}"
+               class="fw-semibold text-decoration-none" style="color:var(--p);">
+              {{ post.original_post.author.get_full_name|default:post.original_post.author.username }}
+            </a>
+          </div>
+          {% endif %}
+
+          <!-- Content -->
+          <p class="mb-2" style="color:var(--text);line-height:1.65;font-size:.95rem;">
+            {{ post.content }}
+          </p>
+
+          <!-- Media -->
+          {% if post.image %}
+          <div class="mb-2 rounded-3 overflow-hidden"
+               style="max-height:420px;cursor:zoom-in;"
+               onclick="openLightbox('{{ post.image.url }}')"
+               role="img" aria-label="Фото публікації">
+            <img src="{{ post.image.url }}" class="w-100"
+                 style="object-fit:cover;max-height:420px;" alt="Зображення публікації" loading="lazy">
+          </div>
+          {% endif %}
+          {% if post.video %}
+          <video class="w-100 rounded-3 mb-2" controls style="max-height:300px;">
+            <source src="{{ post.video.url }}">
+            Ваш браузер не підтримує відео.
+          </video>
+          {% endif %}
+          {% if post.link %}
+          <a href="{{ post.link }}" target="_blank" rel="noopener noreferrer"
+             class="d-flex align-items-center gap-2 p-2 rounded-3 mb-2 text-decoration-none"
+             style="background:var(--bg3);color:var(--p);font-size:.83rem;">
+            <i class="bi bi-link-45deg fs-5" aria-hidden="true"></i>
+            {{ post.link|truncatechars:55 }}
+          </a>
+          {% endif %}
+
+          <!-- Stats row -->
+          {% if post.like_count or post.comment_count %}
+          <div class="d-flex align-items-center gap-3 py-1 mb-1 small"
+               style="color:var(--muted);border-top:1px solid var(--divider);">
+            {% if post.like_count %}<span>❤️ {{ post.like_count }}</span>{% endif %}
+            {% if post.comment_count %}
+            <span class="ms-auto">{{ post.comment_count }} коментар{{ post.comment_count|pluralize:",,ів" }}</span>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <!-- Action buttons -->
+          <div class="post-actions" role="group" aria-label="Дії з публікацією">
+
+            <!-- Like + reaction popup -->
+            <div class="position-relative" style="flex:1;">
+              <button class="post-action-btn like-btn w-100 {% for like in post.likes.all %}{% if like.user_id == request.user.id %}liked{% endif %}{% endfor %}"
+                      data-post-id="{{ post.pk }}"
+                      data-url="{% url 'like_post' post.pk %}"
+                      onmouseenter="showReactions(this)"
+                      onmouseleave="hideReactions(this)"
+                      aria-label="Лайк">
+                {% for like in post.likes.all %}{% if like.user_id == request.user.id %}❤️{% endif %}{% endfor %}{% if not post.likes.all %}🤍{% else %}{% with liked=False %}{% for like in post.likes.all %}{% if like.user_id == request.user.id %}{% with liked=True %}{% endwith %}{% endif %}{% endfor %}{% endwith %}{% endif %}
+                <span class="like-count">{{ post.like_count }}</span>
+              </button>
+              <div class="reaction-popup" role="group" aria-label="Реакції">
+                <button class="re-btn" onclick="quickReact('{{ post.pk }}','❤️')" aria-label="Серце">❤️</button>
+                <button class="re-btn" onclick="quickReact('{{ post.pk }}','👍')" aria-label="Клас">👍</button>
+                <button class="re-btn" onclick="quickReact('{{ post.pk }}','😂')" aria-label="Сміх">😂</button>
+                <button class="re-btn" onclick="quickReact('{{ post.pk }}','😮')" aria-label="Вау">😮</button>
+                <button class="re-btn" onclick="quickReact('{{ post.pk }}','😢')" aria-label="Сум">😢</button>
+                <button class="re-btn" onclick="quickReact('{{ post.pk }}','🔥')" aria-label="Вогонь">🔥</button>
+              </div>
+            </div>
+
+            <!-- Comment toggle -->
+            <button class="post-action-btn" onclick="toggleComments('{{ post.pk }}')" aria-label="Коментарі">
+              💬 <span>{{ post.comment_count }}</span>
+            </button>
+
+            <!-- Repost -->
+            <form method="post" action="{% url 'repost' post.pk %}" style="flex:1;display:flex;">
+              {% csrf_token %}
+              <button type="submit" class="post-action-btn w-100" aria-label="Поширити">🔁 Поширити</button>
+            </form>
+
+            <!-- Copy link -->
+            <button class="post-action-btn"
+                    onclick="copyPostLink('{{ request.scheme }}://{{ request.get_host }}{% url 'post_detail' post.pk %}')"
+                    aria-label="Скопіювати посилання">🔗</button>
+          </div><!-- /post-actions -->
+
+          <!-- Inline comments -->
+          <div id="comment-box-{{ post.pk }}" style="display:none;" class="mt-2 pt-2">
+            {% for comment in post.comments.all|slice:":3" %}
+            <div class="d-flex gap-2 mb-2">
+              <img src="{{ comment.author.get_avatar_url }}" class="rounded-circle"
+                   style="object-fit:cover;flex-shrink:0;" width="28" height="28"
+                   alt="{{ comment.author.username }}">
+              <div class="rounded-3 px-3 py-2 flex-grow-1" style="background:var(--bg3);font-size:.83rem;">
+                <span class="fw-bold me-1" style="color:var(--text);">
+                  {{ comment.author.get_full_name|default:comment.author.username }}
+                </span>
+                <span style="color:var(--text2);">{{ comment.content }}</span>
+              </div>
+            </div>
+            {% endfor %}
+
+            <!-- New comment form -->
+            <form method="post" action="{% url 'post_detail' post.pk %}"
+                  class="d-flex gap-2 align-items-center">
+              {% csrf_token %}
+              <img src="{{ request.user.get_avatar_url }}" class="rounded-circle"
+                   style="object-fit:cover;flex-shrink:0;" width="30" height="30"
+                   alt="{{ request.user.username }}">
+              <input type="text" name="content" class="form-control form-control-sm"
+                     placeholder="Напиши коментар..." style="border-radius:20px;"
+                     aria-label="Текст коментаря">
+              <button type="submit" class="btn btn-primary btn-sm px-2" aria-label="Надіслати коментар">
+                <i class="bi bi-send-fill"></i>
+              </button>
+            </form>
+          </div><!-- /comment-box -->
+
+        </div><!-- /.card-body -->
+      </article>
+      {% empty %}
+      <div class="text-center py-5" style="color:var(--muted);">
+        <div style="font-size:4rem;margin-bottom:.75rem;" aria-hidden="true">🌌</div>
+        <div class="fw-bold mb-1" style="color:var(--text);font-size:1.1rem;">Стрічка порожня</div>
+        <p class="small mb-3">Додай друзів або підпишись на людей, щоб бачити їхні пости</p>
+        <a href="{% url 'search_users' %}" class="btn btn-primary btn-sm">🔍 Знайти людей</a>
+      </div>
+      {% endfor %}
+    </div><!-- /#posts-container -->
+
+  </div><!-- /.col main feed -->
+
+  <!-- ══ RIGHT SIDEBAR ══════════════════════════════════════ -->
+  <div class="col-lg-3 d-none d-lg-block">
+
+    <!-- Online users -->
+    <div class="sidebar-widget mb-3">
+      <div class="fw-bold small mb-3" style="color:var(--text);">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;
+                     background:var(--green);margin-right:.4rem;
+                     box-shadow:0 0 8px var(--green);" aria-hidden="true"></span>
+        Онлайн зараз
+      </div>
+      {% for u in popular_users|slice:":5" %}
+      <a href="{% url 'profile' u.username %}" class="sidebar-link"
+         style="padding:.4rem .5rem;margin-bottom:.2rem;">
+        <div style="position:relative;">
+          <img src="{{ u.get_avatar_url }}" class="rounded-circle"
+               style="object-fit:cover;" width="32" height="32" alt="{{ u.username }}">
+          <span style="position:absolute;bottom:0;right:0;width:9px;height:9px;
+                       border-radius:50%;background:var(--green);border:2px solid var(--card-solid);"
+                aria-hidden="true"></span>
+        </div>
+        <span class="small fw-500" style="color:var(--text);">
+          {{ u.get_full_name|default:u.username }}
+        </span>
+      </a>
+      {% empty %}
+      <span class="small" style="color:var(--muted);">Поки нікого онлайн</span>
+      {% endfor %}
+    </div>
+
+    <!-- Trending topics (static — no Django string iteration) -->
+    <div class="sidebar-widget mb-3">
+      <div class="fw-bold small mb-3" style="color:var(--text);">🔥 Популярні теми</div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span style="color:var(--p);font-size:.83rem;font-weight:600;">#НЕМК</span>
+        <span class="badge rounded-pill" style="background:var(--hover);color:var(--p);font-size:.7rem;">142</span>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span style="color:var(--p);font-size:.83rem;font-weight:600;">#Навчання</span>
+        <span class="badge rounded-pill" style="background:var(--hover);color:var(--p);font-size:.7rem;">89</span>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span style="color:var(--p);font-size:.83rem;font-weight:600;">#Практика</span>
+        <span class="badge rounded-pill" style="background:var(--hover);color:var(--p);font-size:.7rem;">67</span>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span style="color:var(--p);font-size:.83rem;font-weight:600;">#ІТ</span>
+        <span class="badge rounded-pill" style="background:var(--hover);color:var(--p);font-size:.7rem;">54</span>
+      </div>
+      <div class="d-flex justify-content-between align-items-center">
+        <span style="color:var(--p);font-size:.83rem;font-weight:600;">#Спорт</span>
+        <span class="badge rounded-pill" style="background:var(--hover);color:var(--p);font-size:.7rem;">43</span>
+      </div>
+    </div>
+
+    <!-- Suggested users -->
+    {% if popular_users %}
+    <div class="sidebar-widget">
+      <div class="fw-bold small mb-3" style="color:var(--text);">✨ Можливо знаєш</div>
+      {% for u in popular_users|slice:":4" %}
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <img src="{{ u.get_avatar_url }}" class="rounded-circle"
+             style="object-fit:cover;border:2px solid var(--border);" width="36" height="36"
+             alt="{{ u.username }}">
+        <div class="flex-grow-1 overflow-hidden">
+          <div class="small fw-bold text-truncate" style="color:var(--text);">
+            {{ u.get_full_name|default:u.username }}
+          </div>
+          <div style="font-size:.7rem;color:var(--muted);">@{{ u.username }}</div>
+        </div>
+        <a href="{% url 'follow_user' u.username %}"
+           class="btn btn-sm fw-600"
+           style="font-size:.73rem;padding:.22rem .65rem;border-radius:20px;
+                  background:rgba(99,102,241,.12);color:var(--p);border:1px solid rgba(99,102,241,.25);"
+           aria-label="Підписатися на {{ u.username }}">+</a>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </div><!-- /.right sidebar -->
+</div><!-- /.row -->
+
+<!-- ── Lightbox ──────────────────────────────────────────────── -->
+<div id="lightbox"
+     style="display:none;position:fixed;inset:0;z-index:9999;
+            background:rgba(0,0,0,.92);align-items:center;justify-content:center;"
+     onclick="closeLightbox()"
+     role="dialog" aria-label="Збільшене зображення" aria-modal="true">
+  <img id="lightbox-img" src="" alt="Зображення"
+       style="max-width:90vw;max-height:90vh;border-radius:14px;object-fit:contain;">
+  <button onclick="closeLightbox()" aria-label="Закрити"
+          style="position:absolute;top:1rem;right:1rem;
+                 background:rgba(255,255,255,.12);border:none;color:#fff;
+                 width:38px;height:38px;border-radius:50%;font-size:1.1rem;cursor:pointer;">✕</button>
+</div>
+
+<!-- ── Toast container ──────────────────────────────────────── -->
+<div id="feed-toast-container"
+     style="position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);
+            z-index:10000;display:flex;flex-direction:column;align-items:center;
+            gap:.5rem;pointer-events:none;" aria-live="polite"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ============================================================
+   Feed page — inline scripts (no |split filter used!)
+   Emoji list is static JS array
+   ============================================================ */
+
+// ── Emoji panel via JS ────────────────────────────────────────
+(function buildEmojiPanel() {
+  const EMOJIS = [
+    '😂','❤️','🔥','👍','😍','🎉','💪','🤔','😎','🥳',
+    '💡','📚','⚡','🏆','😅','🙏','👏','✅','🚀','💯',
+    '😢','🤣','😘','🤩','😡','🤯','🫡','💀','🫶','✨',
+    '🎓','🏫','📖','🔬','💻','🎵','🌟','🍕','☕','🌈',
+    '👨‍💻','🤖','⭐','💎','🎯'
+  ];
+  const panel = document.getElementById('emoji-panel');
+  if (!panel) return;
+  EMOJIS.forEach(e => {
+    const b = document.createElement('button');
+    b.type      = 'button';
+    b.className = 'emoji-btn';
+    b.textContent = e;
+    b.setAttribute('aria-label', e);
+    b.onclick = () => insertEmoji(e);
+    panel.appendChild(b);
+  });
+})();
+
+// ── Char counter ──────────────────────────────────────────────
+const _ta = document.getElementById('composer-text');
+const _cc = document.getElementById('char-count');
+const _sb = document.getElementById('post-submit-btn');
+
+if (_ta) {
+  _ta.addEventListener('input', function () {
+    const l = this.value.trim().length;
+    _cc.textContent = `${l} / 500`;
+    _cc.className = 'composer-char-count' + (l > 450 ? ' danger' : l > 380 ? ' warn' : '');
+    _sb.disabled = l === 0;
+  });
+}
+
+// ── Mood buttons ──────────────────────────────────────────────
+document.querySelectorAll('.mood-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ── Post type → link input ────────────────────────────────────
+document.querySelector('.composer-toolbar select')?.addEventListener('change', function () {
+  const wrap = document.getElementById('link-input-wrap');
+  if (wrap) wrap.classList.toggle('d-none', this.value !== 'link');
+  document.getElementById('post-type-input').value = this.value;
+});
+
+// ── Emoji panel toggle ────────────────────────────────────────
+function toggleEmojiPanel() {
+  document.getElementById('emoji-panel').classList.toggle('show');
+}
+
+function insertEmoji(e) {
+  if (!_ta) return;
+  const p = _ta.selectionStart;
+  _ta.value = _ta.value.slice(0, p) + e + _ta.value.slice(p);
+  _ta.dispatchEvent(new Event('input'));
+  _ta.focus();
+  _ta.setSelectionRange(p + e.length, p + e.length);
+}
+
+// ── Drop zone ─────────────────────────────────────────────────
+function toggleDropZone() {
+  document.getElementById('drop-zone').classList.toggle('show');
+}
+
+function handleDrop(ev) {
+  ev.preventDefault();
+  document.getElementById('drop-zone').classList.remove('active');
+  const files = [...ev.dataTransfer.files].filter(f => f.type.startsWith('image/'));
+  if (!files.length) return;
+  const inp = document.getElementById('img-file-input');
+  const dt  = new DataTransfer();
+  files.forEach(f => dt.items.add(f));
+  inp.files = dt.files;
+  previewImages(inp);
+}
+
+// ── Image preview ─────────────────────────────────────────────
+function previewImages(input) {
+  const strip = document.getElementById('img-preview-strip');
+  strip.innerHTML = '';
+  strip.classList.add('show');
+  [...input.files].forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const t = document.createElement('div');
+      t.className = 'img-thumb';
+      t.innerHTML = `<img src="${e.target.result}" alt="Прев'ю">
+        <button class="remove-img" onclick="removeImg(this.parentElement)" aria-label="Видалити фото">✕</button>`;
+      strip.appendChild(t);
+    };
+    reader.readAsDataURL(file);
+  });
+  _sb.disabled = false;
+}
+
+function removeImg(el) {
+  el.remove();
+  const strip = document.getElementById('img-preview-strip');
+  if (!strip.children.length) strip.classList.remove('show');
+}
+
+// ── Reaction popup ────────────────────────────────────────────
+let _reactionTimer;
+function showReactions(btn) {
+  clearTimeout(_reactionTimer);
+  const popup = btn.nextElementSibling;
+  if (popup) popup.classList.add('visible');
+}
+function hideReactions(btn) {
+  const popup = btn.nextElementSibling;
+  _reactionTimer = setTimeout(() => {
+    if (popup) popup.classList.remove('visible');
+  }, 400);
+}
+function quickReact(id, emoji) {
+  showFeedToast(`${emoji} реакцію додано!`);
+  document.querySelector(`.like-btn[data-post-id="${id}"]`)?.click();
+}
+
+// ── Comment toggle ────────────────────────────────────────────
+function toggleComments(id) {
+  const box = document.getElementById('comment-box-' + id);
+  if (!box) return;
+  const hidden = box.style.display === 'none';
+  box.style.display = hidden ? 'block' : 'none';
+  if (hidden) {
+    box.style.animation = 'popIn .3s ease both';
+    box.querySelector('input')?.focus();
+  }
+}
+
+// ── Filter tabs ───────────────────────────────────────────────
+const moodMap = { study: '📚', sport: '⚽', event: '🎉', question: '🤔', announce: '📢' };
+function filterPosts(mood, btn) {
+  document.querySelectorAll('.filter-tab').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+  });
+  btn.classList.add('active');
+  btn.setAttribute('aria-selected', 'true');
+
+  document.querySelectorAll('.post-card').forEach(card => {
+    if (mood === 'all') { card.style.display = ''; return; }
+    const text = card.querySelector('p')?.textContent || '';
+    card.style.display = text.includes(moodMap[mood] || '') ? '' : 'none';
+  });
+}
+
+// ── Lightbox ──────────────────────────────────────────────────
+function openLightbox(src) {
+  const lb = document.getElementById('lightbox');
+  document.getElementById('lightbox-img').src = src;
+  lb.style.display = 'flex';
+  lb.style.animation = 'popIn .2s ease both';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').style.display = 'none';
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLightbox();
+});
+
+// ── Copy link ─────────────────────────────────────────────────
+function copyPostLink(url) {
+  navigator.clipboard.writeText(url)
+    .then(() => showFeedToast('🔗 Посилання скопійовано!'))
+    .catch(() => showFeedToast('Не вдалося скопіювати.'));
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function showFeedToast(msg) {
+  const tc = document.getElementById('feed-toast-container');
+  if (!tc) return;
+  const t = document.createElement('div');
+  t.style.cssText = `
+    background:var(--card);color:var(--text);
+    border:1px solid var(--border);
+    padding:.6rem 1.2rem;border-radius:14px;
+    font-size:.83rem;font-weight:600;
+    box-shadow:var(--shadow-lg);
+    animation:popIn .3s ease both;
+    pointer-events:all;
+    backdrop-filter:blur(20px);
+  `;
+  t.textContent = msg;
+  tc.appendChild(t);
+  setTimeout(() => {
+    t.style.transition = 'opacity .3s';
+    t.style.opacity    = '0';
+    setTimeout(() => t.remove(), 300);
+  }, 2500);
+}
+</script>
+{% endblock %}

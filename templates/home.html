@@ -1,0 +1,641 @@
+{% extends 'base.html' %}
+{% block title %}НЕМК Суспільство — Головна{% endblock %}
+
+{% block content %}
+
+{% if user.is_authenticated %}
+{# ── Авторизовані бачать стрічку (feed_view рендерить feed.html, але якщо потрапив сюди — CTA) ── #}
+<div class="text-center py-5">
+  <div style="font-size:4rem;margin-bottom:1rem;" aria-hidden="true">🚀</div>
+  <h2 class="fw-900 mb-2" style="color:var(--text);">Вітаємо, {{ user.first_name|default:user.username }}!</h2>
+  <p style="color:var(--muted);" class="mb-4">Перейди до стрічки, щоб побачити оновлення друзів та коледжу.</p>
+  <a href="{% url 'feed' %}" class="btn btn-primary px-5 py-3 fw-700" style="font-size:1.05rem;">
+    <i class="bi bi-house-fill me-2"></i>Відкрити стрічку
+  </a>
+</div>
+
+{% else %}
+{# ══ HERO ══════════════════════════════════════════════════════ #}
+<section class="hero-section">
+  <!-- Animated orbs -->
+  <div class="orb" style="width:500px;height:500px;background:rgba(99,102,241,.12);top:-100px;left:-150px;animation-duration:18s;" aria-hidden="true"></div>
+  <div class="orb" style="width:400px;height:400px;background:rgba(94,92,230,.1);bottom:-80px;right:-100px;animation-duration:14s;animation-delay:-5s;" aria-hidden="true"></div>
+  <div class="orb" style="width:300px;height:300px;background:rgba(244,114,182,.07);top:40%;right:20%;animation-duration:20s;animation-delay:-8s;" aria-hidden="true"></div>
+
+  <!-- Particles -->
+  <div id="hero-particles" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;" aria-hidden="true"></div>
+
+  <div class="container position-relative py-5" style="z-index:2;">
+    <div class="row align-items-center g-5">
+
+      <!-- Left column -->
+      <div class="col-lg-6">
+        <div class="hero-badge">
+          <span class="pulse-dot" aria-hidden="true"></span>
+          Ніжинський електромеханічний коледж • з 1961 року
+        </div>
+        <h1 class="hero-title">
+          НЕМК<br>
+          <span class="shimmer-text">Суспільство</span>
+        </h1>
+        <p class="hero-desc">
+          Офіційна соціальна платформа студентів і викладачів.<br>
+          Спілкуйся, ділись знаннями, будь у центрі коледжського життя.
+        </p>
+
+        <!-- CTA buttons -->
+        <div class="d-flex gap-3 flex-wrap mb-4">
+          <a href="{% url 'register' %}" class="hero-btn-main">
+            <i class="bi bi-rocket-takeoff-fill" aria-hidden="true"></i>
+            Зареєструйся щоб писати пости
+          </a>
+          <a href="{% url 'login' %}" class="hero-btn-secondary">
+            <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
+            Увійти
+          </a>
+        </div>
+
+        <!-- Stats row -->
+        <div class="d-flex gap-4 flex-wrap">
+          <div>
+            <div class="hero-stat-num">1961</div>
+            <div class="hero-stat-label">рік заснування</div>
+          </div>
+          <div>
+            <div class="hero-stat-num">12+</div>
+            <div class="hero-stat-label">спеціальностей</div>
+          </div>
+          <div>
+            <div class="hero-stat-num">60+</div>
+            <div class="hero-stat-label">років досвіду</div>
+          </div>
+          <div>
+            <div class="hero-stat-num">★ 4.8</div>
+            <div class="hero-stat-label">рейтинг</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column — floating card -->
+      <div class="col-lg-6 d-none d-lg-flex justify-content-center">
+        <div style="width:340px;">
+          <div class="hero-card-glass float-anim">
+            <!-- Card header -->
+            <div class="d-flex align-items-center gap-3 mb-3 pb-3"
+                 style="border-bottom:1px solid rgba(255,255,255,.1);">
+              <div style="width:46px;height:46px;border-radius:14px;
+                          background:linear-gradient(135deg,#6366f1,#f472b6);
+                          display:flex;align-items:center;justify-content:center;font-size:1.3rem;"
+                   aria-hidden="true">🏫</div>
+              <div>
+                <div class="fw-bold" style="color:#fff;font-size:.95rem;">НЕМК Суспільство</div>
+                <div style="color:rgba(255,255,255,.5);font-size:.75rem;
+                            display:flex;align-items:center;gap:.3rem;">
+                  <span style="width:7px;height:7px;border-radius:50%;
+                               background:#30d158;box-shadow:0 0 8px #30d158;"
+                        aria-hidden="true"></span> Онлайн
+                </div>
+              </div>
+            </div>
+
+            <!-- Mock activity feed -->
+            <div class="d-flex gap-2 align-items-center p-2 rounded-3 mb-2"
+                 style="background:rgba(255,255,255,.05);"
+                 onmouseover="this.style.background='rgba(255,255,255,.1)'"
+                 onmouseout="this.style.background='rgba(255,255,255,.05)'">
+              <div style="width:32px;height:32px;border-radius:50%;
+                          background:linear-gradient(135deg,#6366f1,#818cf8);flex-shrink:0;" aria-hidden="true"></div>
+              <div style="flex:1;">
+                <div style="height:8px;border-radius:4px;background:rgba(255,255,255,.2);width:80%;margin-bottom:4px;"></div>
+                <div style="height:6px;border-radius:3px;background:rgba(255,255,255,.1);width:55%;"></div>
+              </div>
+              <div style="color:rgba(255,255,255,.3);font-size:.7rem;">1хв</div>
+            </div>
+            <div class="d-flex gap-2 align-items-center p-2 rounded-3 mb-2"
+                 style="background:rgba(255,255,255,.05);"
+                 onmouseover="this.style.background='rgba(255,255,255,.1)'"
+                 onmouseout="this.style.background='rgba(255,255,255,.05)'">
+              <div style="width:32px;height:32px;border-radius:50%;
+                          background:linear-gradient(135deg,#f472b6,#fb923c);flex-shrink:0;" aria-hidden="true"></div>
+              <div style="flex:1;">
+                <div style="height:8px;border-radius:4px;background:rgba(255,255,255,.2);width:70%;margin-bottom:4px;"></div>
+                <div style="height:6px;border-radius:3px;background:rgba(255,255,255,.1);width:45%;"></div>
+              </div>
+              <div style="color:rgba(255,255,255,.3);font-size:.7rem;">3хв</div>
+            </div>
+            <div class="d-flex gap-2 align-items-center p-2 rounded-3 mb-2"
+                 style="background:rgba(255,255,255,.05);"
+                 onmouseover="this.style.background='rgba(255,255,255,.1)'"
+                 onmouseout="this.style.background='rgba(255,255,255,.05)'">
+              <div style="width:32px;height:32px;border-radius:50%;
+                          background:linear-gradient(135deg,#34d399,#6366f1);flex-shrink:0;" aria-hidden="true"></div>
+              <div style="flex:1;">
+                <div style="height:8px;border-radius:4px;background:rgba(255,255,255,.2);width:90%;margin-bottom:4px;"></div>
+                <div style="height:6px;border-radius:3px;background:rgba(255,255,255,.1);width:65%;"></div>
+              </div>
+              <div style="color:rgba(255,255,255,.3);font-size:.7rem;">5хв</div>
+            </div>
+            <div class="d-flex gap-2 align-items-center p-2 rounded-3 mb-2"
+                 style="background:rgba(255,255,255,.05);"
+                 onmouseover="this.style.background='rgba(255,255,255,.1)'"
+                 onmouseout="this.style.background='rgba(255,255,255,.05)'">
+              <div style="width:32px;height:32px;border-radius:50%;
+                          background:linear-gradient(135deg,#fbbf24,#f472b6);flex-shrink:0;" aria-hidden="true"></div>
+              <div style="flex:1;">
+                <div style="height:8px;border-radius:4px;background:rgba(255,255,255,.2);width:60%;margin-bottom:4px;"></div>
+                <div style="height:6px;border-radius:3px;background:rgba(255,255,255,.1);width:40%;"></div>
+              </div>
+              <div style="color:rgba(255,255,255,.3);font-size:.7rem;">8хв</div>
+            </div>
+
+            <!-- Stats row -->
+            <div class="d-flex justify-content-between mt-3 pt-2"
+                 style="border-top:1px solid rgba(255,255,255,.08);">
+              <span style="color:rgba(255,255,255,.55);font-size:.78rem;"><span style="color:#ff453a;" aria-hidden="true">❤️</span> 1.2k</span>
+              <span style="color:rgba(255,255,255,.55);font-size:.78rem;"><span style="color:#6366f1;" aria-hidden="true">💬</span> 348</span>
+              <span style="color:rgba(255,255,255,.55);font-size:.78rem;"><span style="color:#ffd60a;" aria-hidden="true">👥</span> 256</span>
+              <span style="color:rgba(255,255,255,.55);font-size:.78rem;"><span style="color:#30d158;" aria-hidden="true">📢</span> 12</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Scroll hint -->
+  <div class="position-absolute w-100 text-center" style="bottom:2rem;z-index:2;">
+    <a href="#features" style="color:rgba(255,255,255,.35);display:inline-block;
+                                animation:floatY 2.5s ease-in-out infinite;font-size:1.3rem;"
+       aria-label="Прокрутити вниз">
+      <i class="bi bi-chevron-double-down" aria-hidden="true"></i>
+    </a>
+  </div>
+</section>
+
+{# ══ FEATURES ══════════════════════════════════════════════════ #}
+<section id="features" style="padding:6rem 0;background:var(--bg2);">
+  <div class="container">
+    <div class="text-center mb-5 reveal">
+      <h2 class="section-title center mx-auto d-inline-block">Можливості платформи</h2>
+      <p class="text-muted mt-3 mx-auto" style="max-width:480px;">
+        Все що потрібно студенту НЕМК — в одному місці
+      </p>
+    </div>
+    <div class="row g-4 reveal-stagger">
+      <div class="col-md-4 col-sm-6">
+        <div class="feature-card">
+          <div class="feature-icon" style="background:#eff6ff;" aria-hidden="true">
+            <i class="bi bi-rss-fill" style="color:#0a84ff;"></i>
+          </div>
+          <h3 class="fw-bold mb-2" style="font-size:1.05rem;">Стрічка новин</h3>
+          <p class="text-muted small mb-0">Пости від друзів, груп та офіційних оголошень коледжу в одному місці</p>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6">
+        <div class="feature-card">
+          <div class="feature-icon" style="background:#f0fdf4;" aria-hidden="true">
+            <i class="bi bi-chat-dots-fill" style="color:#30d158;"></i>
+          </div>
+          <h3 class="fw-bold mb-2" style="font-size:1.05rem;">Чат у реальному часі</h3>
+          <p class="text-muted small mb-0">Миттєві повідомлення через WebSocket — приватні та групові чати</p>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6">
+        <div class="feature-card">
+          <div class="feature-icon" style="background:#fffbeb;" aria-hidden="true">
+            <i class="bi bi-people-fill" style="color:#ffd60a;"></i>
+          </div>
+          <h3 class="fw-bold mb-2" style="font-size:1.05rem;">Групи та спільноти</h3>
+          <p class="text-muted small mb-0">Навчальні групи, гуртки за інтересами, офіційні спільноти НЕМК</p>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6">
+        <div class="feature-card">
+          <div class="feature-icon" style="background:#fdf4ff;" aria-hidden="true">
+            <i class="bi bi-robot" style="color:#6366f1;"></i>
+          </div>
+          <h3 class="fw-bold mb-2" style="font-size:1.05rem;">AI Асистент</h3>
+          <p class="text-muted small mb-0">Чат-бот відповість на будь-яке питання про коледж — цілодобово</p>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6">
+        <div class="feature-card">
+          <div class="feature-icon" style="background:#fff1f2;" aria-hidden="true">
+            <i class="bi bi-bell-fill" style="color:#ff453a;"></i>
+          </div>
+          <h3 class="fw-bold mb-2" style="font-size:1.05rem;">Сповіщення</h3>
+          <p class="text-muted small mb-0">Миттєві push-сповіщення про події, лайки та повідомлення</p>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6">
+        <div class="feature-card">
+          <div class="feature-icon" style="background:#f0fdfa;" aria-hidden="true">
+            <i class="bi bi-star-fill" style="color:#ff9f0a;"></i>
+          </div>
+          <h3 class="fw-bold mb-2" style="font-size:1.05rem;">Оцінки та відгуки</h3>
+          <p class="text-muted small mb-0">Залишай відгуки та рейтинги, ділись враженнями про навчання</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ══ ABOUT ══════════════════════════════════════════════════════ #}
+<section style="padding:6rem 0;background:var(--bg);">
+  <div class="container">
+    <div class="row g-5 align-items-center">
+      <div class="col-lg-6 reveal">
+        <h2 class="section-title mb-4">Про коледж</h2>
+        <p class="text-muted mb-4" style="line-height:1.8;font-size:1.02rem;">
+          <strong>Ніжинський електромеханічний коледж</strong> — провідний технічний заклад
+          фахової передвищої освіти Чернігівської області, що готує висококваліфікованих
+          фахівців з <strong>1961 року</strong>.
+        </p>
+        <div class="info-block">
+          <div class="info-block-icon" style="background:#eff6ff;" aria-hidden="true">
+            <i class="bi bi-geo-alt-fill" style="color:#0a84ff;"></i>
+          </div>
+          <div>
+            <div class="fw-bold">Адреса</div>
+            <div class="text-muted small">вул. Шевченка, 93, м. Ніжин, Чернігівська обл., 16600</div>
+          </div>
+        </div>
+        <div class="info-block">
+          <div class="info-block-icon" style="background:#f0fdf4;" aria-hidden="true">
+            <i class="bi bi-telephone-fill" style="color:#30d158;"></i>
+          </div>
+          <div>
+            <div class="fw-bold">Телефон</div>
+            <div class="text-muted small">(04631) 2-13-54 &nbsp;·&nbsp; (04631) 2-26-87</div>
+          </div>
+        </div>
+        <div class="info-block">
+          <div class="info-block-icon" style="background:#fffbeb;" aria-hidden="true">
+            <i class="bi bi-envelope-fill" style="color:#ff9f0a;"></i>
+          </div>
+          <div>
+            <div class="fw-bold">Email</div>
+            <div class="text-muted small">nemk@nemk.com.ua</div>
+          </div>
+        </div>
+        <div class="info-block">
+          <div class="info-block-icon" style="background:#fdf4ff;" aria-hidden="true">
+            <i class="bi bi-clock-fill" style="color:#6366f1;"></i>
+          </div>
+          <div>
+            <div class="fw-bold">Графік роботи</div>
+            <div class="text-muted small">Понеділок–П'ятниця: 08:00 – 17:00</div>
+          </div>
+        </div>
+        <div class="info-block">
+          <div class="info-block-icon" style="background:#fff1f2;" aria-hidden="true">
+            <i class="bi bi-globe2" style="color:#ff453a;"></i>
+          </div>
+          <div>
+            <div class="fw-bold">Сайт</div>
+            <div class="small">
+              <a href="https://nemk.com.ua/" target="_blank" rel="noopener noreferrer"
+                 class="fw-semibold" style="color:#6366f1;">nemk.com.ua</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6 reveal">
+        <div class="map-container mb-4">
+          <iframe src="https://maps.google.com/maps?q=Nizhyn+Shevchenko+93&output=embed"
+                  loading="lazy" allowfullscreen title="Карта НЕМК"></iframe>
+        </div>
+        <div class="row g-3">
+          <div class="col-6">
+            <div class="text-center p-3 rounded-3 glass-card">
+              <div style="font-size:1.9rem;font-weight:900;color:#0a84ff;">1961</div>
+              <div class="text-muted small">рік заснування</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="text-center p-3 rounded-3 glass-card">
+              <div style="font-size:1.9rem;font-weight:900;color:#30d158;">12+</div>
+              <div class="text-muted small">спеціальностей</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="text-center p-3 rounded-3 glass-card">
+              <div style="font-size:1.9rem;font-weight:900;color:#ff9f0a;">60+</div>
+              <div class="text-muted small">років досвіду</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="text-center p-3 rounded-3 glass-card">
+              <div style="font-size:1.9rem;font-weight:900;color:#6366f1;">★ 4.8</div>
+              <div class="text-muted small">рейтинг закладу</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ══ GALLERY ════════════════════════════════════════════════════ #}
+<section style="padding:5rem 0;background:var(--bg);">
+  <div class="container">
+    <div class="text-center mb-5 reveal">
+      <h2 class="section-title center mx-auto d-inline-block">Наш коледж</h2>
+    </div>
+    <div class="row g-3">
+      <div class="col-md-6 reveal">
+        <div class="gallery-img" style="aspect-ratio:16/9;">
+          <img src="https://images.unsplash.com/photo-1562774053-701939374585?w=900&q=80"
+               alt="Навчальний корпус НЕМК" loading="lazy">
+          <div class="gallery-overlay">🏫 Навчальний корпус</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6 reveal">
+        <div class="gallery-img">
+          <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=500&q=80"
+               alt="Студенти" loading="lazy">
+          <div class="gallery-overlay">👨‍🎓 Студенти</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6 reveal">
+        <div class="gallery-img">
+          <img src="https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?w=500&q=80"
+               alt="Лабораторія" loading="lazy">
+          <div class="gallery-overlay">⚡ Лабораторія</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6 reveal">
+        <div class="gallery-img">
+          <img src="https://images.unsplash.com/photo-1531482615713-2afd69097998?w=500&q=80"
+               alt="Заняття" loading="lazy">
+          <div class="gallery-overlay">📚 Заняття</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6 reveal">
+        <div class="gallery-img">
+          <img src="https://images.unsplash.com/photo-1571260899304-425eee4c7efc?w=500&q=80"
+               alt="Аудиторія" loading="lazy">
+          <div class="gallery-overlay">🖥️ Аудиторія</div>
+        </div>
+      </div>
+      <div class="col-md-6 reveal">
+        <div class="gallery-img" style="aspect-ratio:16/9;">
+          <img src="https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=900&q=80"
+               alt="Сучасні технології" loading="lazy">
+          <div class="gallery-overlay">🤖 Сучасні технології</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ══ REVIEWS ════════════════════════════════════════════════════ #}
+<section style="padding:6rem 0;background:var(--bg2);" id="reviews">
+  <div class="container">
+    <div class="text-center mb-5 reveal">
+      <h2 class="section-title center mx-auto d-inline-block">Відгуки студентів</h2>
+      <p class="text-muted mt-3">Що кажуть ті, хто вже навчається</p>
+    </div>
+
+    <!-- Overall rating -->
+    <div class="row g-4 mb-5 reveal-stagger">
+      <div class="col-lg-4 text-center">
+        <div class="glass-card p-4 h-100 d-flex flex-column align-items-center justify-content-center">
+          <div style="font-size:4.5rem;font-weight:900;color:#0a84ff;line-height:1;">4.8</div>
+          <div class="stars-display fs-4 my-2" aria-label="4.8 зірок з 5">★★★★★</div>
+          <div class="text-muted small">на основі відгуків студентів</div>
+          <div class="mt-3 d-flex gap-2 flex-wrap justify-content-center">
+            <span class="badge rounded-pill" style="background:#eff6ff;color:#0a84ff;font-size:.75rem;">Якість освіти</span>
+            <span class="badge rounded-pill" style="background:#f0fdf4;color:#30d158;font-size:.75rem;">Викладачі</span>
+            <span class="badge rounded-pill" style="background:#fffbeb;color:#ff9f0a;font-size:.75rem;">Інфраструктура</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="glass-card p-4 h-100">
+          <div class="d-flex flex-column gap-3">
+            <div>
+              <div class="d-flex justify-content-between small mb-1">
+                <span>Якість навчання</span><span class="fw-bold">9.2</span>
+              </div>
+              <div class="rating-bar-track">
+                <div class="rating-bar-fill" data-width="92%" style="width:92%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="d-flex justify-content-between small mb-1">
+                <span>Викладачі</span><span class="fw-bold">9.5</span>
+              </div>
+              <div class="rating-bar-track">
+                <div class="rating-bar-fill" data-width="95%" style="width:95%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="d-flex justify-content-between small mb-1">
+                <span>Технічна база</span><span class="fw-bold">8.2</span>
+              </div>
+              <div class="rating-bar-track">
+                <div class="rating-bar-fill" data-width="82%" style="width:82%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="d-flex justify-content-between small mb-1">
+                <span>Студентське життя</span><span class="fw-bold">8.8</span>
+              </div>
+              <div class="rating-bar-track">
+                <div class="rating-bar-fill" data-width="88%" style="width:88%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="d-flex justify-content-between small mb-1">
+                <span>Гуртожиток</span><span class="fw-bold">7.6</span>
+              </div>
+              <div class="rating-bar-track">
+                <div class="rating-bar-fill" data-width="76%" style="width:76%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between">
+          <div>
+            <div class="fw-bold mb-1">Залиш свій відгук</div>
+            <div class="text-muted small mb-3">Допоможи майбутнім студентам зробити правильний вибір</div>
+            <div class="d-flex gap-1 mb-3 fs-3" id="star-select" style="cursor:pointer;" aria-label="Оцінка">
+              <span data-v="1" class="star-opt" style="color:#ddd;" aria-label="1 зірка">★</span>
+              <span data-v="2" class="star-opt" style="color:#ddd;" aria-label="2 зірки">★</span>
+              <span data-v="3" class="star-opt" style="color:#ddd;" aria-label="3 зірки">★</span>
+              <span data-v="4" class="star-opt" style="color:#ddd;" aria-label="4 зірки">★</span>
+              <span data-v="5" class="star-opt" style="color:#ddd;" aria-label="5 зірок">★</span>
+            </div>
+            <textarea class="form-control mb-3" rows="3"
+                      placeholder="Твій відгук про НЕМК..." id="review-text"
+                      aria-label="Текст відгуку"></textarea>
+          </div>
+          <a href="{% url 'register' %}" class="btn btn-primary w-100">
+            <i class="bi bi-person-plus me-2" aria-hidden="true"></i>
+            Зареєструйся щоб залишити відгук
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Review cards -->
+    <div class="row g-4 reveal-stagger" id="reviews-list">
+      <div class="col-md-4">
+        <div class="review-card">
+          <div class="d-flex gap-3 align-items-center mb-3">
+            <img src="https://ui-avatars.com/api/?name=Дмитро+К&background=6366f1&color=fff&size=46&rounded=true"
+                 class="rounded-circle" width="46" height="46" alt="Дмитро К.">
+            <div>
+              <div class="fw-bold">Дмитро К.</div>
+              <div class="stars-display small" aria-label="5 зірок">★★★★★</div>
+            </div>
+          </div>
+          <p class="text-muted small mb-0">«Чудовий коледж! Викладачі дуже досвідчені, є реальна практика. Після навчання влаштувався за спеціальністю одразу.»</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="review-card">
+          <div class="d-flex gap-3 align-items-center mb-3">
+            <img src="https://ui-avatars.com/api/?name=Аліна+М&background=f472b6&color=fff&size=46&rounded=true"
+                 class="rounded-circle" width="46" height="46" alt="Аліна М.">
+            <div>
+              <div class="fw-bold">Аліна М.</div>
+              <div class="stars-display small" aria-label="5 зірок">★★★★★</div>
+            </div>
+          </div>
+          <p class="text-muted small mb-0">«Найкраще рішення у моєму житті — вступити в НЕМК. Тут справжній студентський дух і багато можливостей для розвитку.»</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="review-card">
+          <div class="d-flex gap-3 align-items-center mb-3">
+            <img src="https://ui-avatars.com/api/?name=Максим+Б&background=fbbf24&color=fff&size=46&rounded=true"
+                 class="rounded-circle" width="46" height="46" alt="Максим Б.">
+            <div>
+              <div class="fw-bold">Максим Б.</div>
+              <div class="stars-display small" aria-label="4 зірки">★★★★☆</div>
+            </div>
+          </div>
+          <p class="text-muted small mb-0">«Дуже подобається сучасна лабораторна база. Програма навчання актуальна, є проекти де реально застосовуєш знання.»</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ══ COMMUNITY PREVIEW ═══════════════════════════════════════════ #}
+{% if popular_users %}
+<section style="padding:4rem 0;background:var(--bg);">
+  <div class="container">
+    <div class="text-center mb-4 reveal">
+      <h2 class="section-title center mx-auto d-inline-block">Спільнота НЕМК</h2>
+    </div>
+    <div class="row g-3 reveal-stagger">
+      {% for u in popular_users %}
+      <div class="col-lg-2 col-md-3 col-4">
+        <a href="{% url 'profile' u.username %}" class="user-card">
+          <img src="{{ u.get_avatar_url }}" class="rounded-circle mb-2 d-block mx-auto"
+               style="object-fit:cover;border:2px solid var(--border);"
+               width="64" height="64" alt="{{ u.username }}">
+          <div class="fw-semibold small text-truncate">{{ u.get_full_name|default:u.username }}</div>
+          <div class="text-muted" style="font-size:.7rem;">@{{ u.username }}</div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ══ CTA BOTTOM ══════════════════════════════════════════════════ #}
+<section style="padding:6rem 0;position:relative;overflow:hidden;
+                background:linear-gradient(160deg,#08080f,#0d1a3a);">
+  <div class="orb" style="width:400px;height:400px;background:rgba(99,102,241,.15);
+                           top:-100px;left:-100px;animation-duration:15s;" aria-hidden="true"></div>
+  <div class="orb" style="width:350px;height:350px;background:rgba(94,92,230,.12);
+                           bottom:-80px;right:-80px;animation-duration:18s;" aria-hidden="true"></div>
+  <div class="container text-center reveal" style="position:relative;z-index:2;">
+    <div class="hero-badge d-inline-flex mb-3">
+      <span class="pulse-dot" aria-hidden="true"></span>
+      Безкоштовно • Вже сьогодні
+    </div>
+    <h2 style="font-size:2.8rem;font-weight:900;color:#fff;letter-spacing:-1px;margin-bottom:1rem;">
+      Приєднуйся до<br><span class="shimmer-text">НЕМК Суспільства</span>
+    </h2>
+    <p style="color:rgba(255,255,255,.6);max-width:430px;margin:0 auto 2rem;font-size:1.05rem;">
+      Вже сотні студентів та викладачів спілкуються тут щодня
+    </p>
+    <div class="d-flex gap-3 justify-content-center flex-wrap">
+      <a href="{% url 'register' %}" class="hero-btn-main"
+         style="font-size:1.05rem;padding:1rem 2.5rem;">
+        <i class="bi bi-rocket-takeoff-fill" aria-hidden="true"></i>
+        Зареєструватись
+      </a>
+      <button onclick="toggleAiChat()" class="hero-btn-secondary"
+              style="font-size:1.05rem;padding:1rem 2.5rem;">
+        <i class="bi bi-robot" aria-hidden="true"></i> Запитати AI
+      </button>
+    </div>
+  </div>
+</section>
+
+{% endif %}{# end not authenticated #}
+
+{% endblock %}
+
+{% block extra_js %}
+{% if not user.is_authenticated %}
+<script>
+// ── Particles ─────────────────────────────────────────────────
+(function () {
+  const c = document.getElementById('hero-particles');
+  if (!c) return;
+  for (let i = 0; i < 50; i++) {
+    const s  = document.createElement('div');
+    const sz = Math.random() * 4 + 1.5;
+    s.className = 'particle';
+    s.style.cssText = `
+      left: ${Math.random() * 100}%;
+      width: ${sz}px; height: ${sz}px;
+      background: rgba(255,255,255,${(Math.random() * .5 + .15).toFixed(2)});
+      animation-duration: ${(Math.random() * 15 + 10).toFixed(1)}s;
+      animation-delay: ${(Math.random() * 10).toFixed(1)}s;
+    `;
+    c.appendChild(s);
+  }
+})();
+
+// ── Scroll reveal ─────────────────────────────────────────────
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      const el = e.target;
+      setTimeout(() => {
+        el.classList.add('visible');
+        el.querySelectorAll('.rating-bar-fill').forEach(bar => {
+          const w = bar.getAttribute('data-width') || bar.style.width;
+          bar.style.width = '0';
+          requestAnimationFrame(() => { bar.style.width = w; });
+        });
+      }, i * 60);
+      obs.unobserve(el);
+    }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal, .reveal-stagger').forEach(el => obs.observe(el));
+
+// ── Smooth scroll ─────────────────────────────────────────────
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const t = document.querySelector(a.getAttribute('href'));
+    if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth' }); }
+  });
+});
+</script>
+{% endif %}
+{% endblock %}
