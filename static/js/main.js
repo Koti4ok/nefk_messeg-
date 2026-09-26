@@ -218,7 +218,10 @@ function toggleAiChat() {
   if (icon) icon.textContent = _aiOpen ? '✕' : '🤖';
   if (_aiOpen) {
     const inp = document.getElementById('ai-input');
-    if (inp) inp.focus();
+    if (inp) setTimeout(() => inp.focus(), 400);
+    // Прокрутити до кінця повідомлень
+    const box = document.getElementById('ai-messages');
+    if (box) setTimeout(() => { box.scrollTop = box.scrollHeight; }, 450);
   }
 }
 
@@ -227,7 +230,18 @@ function appendAiMsg(text, isUser) {
   if (!box) return;
   const d = document.createElement('div');
   d.className = `ai-msg ${isUser ? 'user' : 'bot'}`;
-  d.innerHTML = text;
+
+  const now = new Date();
+  const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+
+  // Convert markdown-like **bold** and newlines
+  let html = text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+
+  d.innerHTML = `
+    <div class="ai-msg-inner">${html}</div>
+    <div class="ai-msg-time">${time}</div>`;
   box.appendChild(d);
   box.scrollTop = box.scrollHeight;
 }
@@ -238,7 +252,7 @@ function _showAiTyping() {
   const d = document.createElement('div');
   d.className = 'ai-msg bot';
   d.id = 'ai-typing';
-  d.innerHTML = '<span class="typing-dots"><span></span><span></span><span></span></span>';
+  d.innerHTML = '<div class="ai-msg-inner"><span class="typing-dots"><span></span><span></span><span></span></span></div>';
   box.appendChild(d);
   box.scrollTop = box.scrollHeight;
 }

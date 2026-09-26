@@ -11,7 +11,7 @@
   <link href="{% static 'css/main.css' %}" rel="stylesheet">
   {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="nemk-body">
 
 <!-- ══ NAVBAR ══════════════════════════════════════════════════ -->
 <nav class="navbar navbar-expand-lg sticky-top">
@@ -19,8 +19,8 @@
 
     <!-- Brand -->
     <a class="navbar-brand" href="{% url 'home' %}">
-      <div class="brand-logo"><i class="bi bi-people-fill"></i></div>
-      <span>НЕМК <strong>Суспільство</strong></span>
+      <div class="brand-logo"><i class="bi bi-mortarboard-fill"></i></div>
+      <span>НЕФК <strong>Суспільство</strong></span>
     </a>
 
     <!-- Mobile: theme + toggler -->
@@ -186,14 +186,14 @@
       <!-- About -->
       <div class="col-lg-4">
         <div class="footer-brand mb-2">
-          <i class="bi bi-people-fill me-2" style="color:#ffd60a;"></i>НЕМК Суспільство
+          <i class="bi bi-people-fill me-2" style="color:#60a5fa;"></i>НЕФК Суспільство
         </div>
         <p style="color:rgba(255,255,255,.5);font-size:.88rem;line-height:1.7;">
-          Офіційна соціальна мережа студентів і викладачів Ніжинського електромеханічного коледжу.
+          Офіційна соціальна мережа студентів і викладачів Ніжинського електромеханічного фахового коледжу.
         </p>
         <a href="https://nemk.com.ua/" target="_blank" rel="noopener noreferrer"
            class="btn btn-sm mt-1"
-           style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.75);border-radius:8px;">
+           style="background:rgba(59,130,246,.15);color:rgba(255,255,255,.8);border-radius:8px;border:1px solid rgba(59,130,246,.3);">
           <i class="bi bi-globe2 me-1"></i>nemk.com.ua
         </a>
       </div>
@@ -218,87 +218,147 @@
       <div class="col-6 col-lg-3">
         <h6 class="fw-700 text-white mb-3" style="font-size:.9rem;">Контакти</h6>
         <ul class="list-unstyled" style="font-size:.87rem;">
-          <li class="mb-2"><i class="bi bi-geo-alt me-2" style="color:#ffd60a;"></i>вул. Шевченка, 93, Ніжин</li>
-          <li class="mb-2"><i class="bi bi-telephone me-2" style="color:#ffd60a;"></i>(04631) 2-13-54</li>
-          <li class="mb-2"><i class="bi bi-envelope me-2" style="color:#ffd60a;"></i>nemk@nemk.com.ua</li>
-          <li class="mb-2"><i class="bi bi-clock me-2" style="color:#ffd60a;"></i>Пн–Пт: 08:00–17:00</li>
+          <li class="mb-2"><i class="bi bi-geo-alt me-2" style="color:#60a5fa;"></i>вул. Шахтарська, 16, Нововолинськ</li>
+          <li class="mb-2"><i class="bi bi-telephone me-2" style="color:#60a5fa;"></i>(03364) 2-49-01</li>
+          <li class="mb-2"><i class="bi bi-envelope me-2" style="color:#60a5fa;"></i>nemk@nemk.com.ua</li>
+          <li class="mb-2"><i class="bi bi-clock me-2" style="color:#60a5fa;"></i>Пн–Пт: 08:00–17:00</li>
         </ul>
       </div>
 
-      <!-- Theme selector -->
+      <!-- Соцмережі + тема -->
       <div class="col-lg-3">
-        <h6 class="fw-700 text-white mb-3" style="font-size:.9rem;">Тема інтерфейсу</h6>
-        <div class="d-flex gap-2 mb-3">
+        <h6 class="fw-700 text-white mb-3" style="font-size:.9rem;">Соцмережі</h6>
+        <div class="d-flex gap-2 flex-wrap mb-4">
+          <a href="https://www.facebook.com/nemk.novovolynsk" target="_blank" rel="noopener"
+             class="footer-social-btn" title="Facebook">
+            <i class="bi bi-facebook"></i>
+          </a>
+          <a href="https://instagram.com/nemk_novovolynsk" target="_blank" rel="noopener"
+             class="footer-social-btn" title="Instagram">
+            <i class="bi bi-instagram"></i>
+          </a>
+          <a href="https://t.me/nemk_novovolynsk" target="_blank" rel="noopener"
+             class="footer-social-btn" title="Telegram">
+            <i class="bi bi-telegram"></i>
+          </a>
+          <a href="https://www.youtube.com/@nemk_novovolynsk" target="_blank" rel="noopener"
+             class="footer-social-btn" title="YouTube">
+            <i class="bi bi-youtube"></i>
+          </a>
+        </div>
+        <h6 class="fw-700 text-white mb-2" style="font-size:.9rem;">Тема</h6>
+        <div class="d-flex gap-2">
           <button onclick="setTheme('light')" id="btn-light-theme"
                   class="btn btn-sm"
-                  style="background:rgba(255,255,255,.15);color:#fff;border-radius:10px;border:1px solid rgba(255,255,255,.2);">
+                  style="background:rgba(255,255,255,.12);color:#fff;border-radius:8px;border:1px solid rgba(255,255,255,.18);">
             ☀️ Світла
           </button>
           <button onclick="setTheme('dark')" id="btn-dark-theme"
                   class="btn btn-sm"
-                  style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.65);border-radius:10px;border:1px solid rgba(255,255,255,.1);">
+                  style="background:rgba(59,130,246,.12);color:rgba(255,255,255,.65);border-radius:8px;border:1px solid rgba(59,130,246,.2);">
             🌙 Темна
           </button>
         </div>
-        <p style="color:rgba(255,255,255,.4);font-size:.78rem;">Заснований у 1961 році. Понад 60 років якісної освіти.</p>
       </div>
 
     </div>
     <hr class="footer-divider">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2"
-         style="font-size:.78rem;color:rgba(255,255,255,.35);">
-      <span>© 2024 НЕМК Суспільство. Всі права захищено.</span>
-      <a href="https://nemk.com.ua/" target="_blank" rel="noopener noreferrer">nemk.com.ua</a>
+         style="font-size:.78rem;color:rgba(255,255,255,.3);">
+      <span>© 2024 НЕФК Суспільство. Всі права захищено.</span>
+      <a href="https://nemk.com.ua/" target="_blank" rel="noopener noreferrer"
+         style="color:rgba(255,255,255,.35);">nemk.com.ua</a>
     </div>
   </div>
 </footer>
 
 <!-- ══ AI CHATBOT FAB ══════════════════════════════════════════ -->
-<button id="ai-chat-fab" onclick="toggleAiChat()" title="НЕМК Асистент" aria-label="Відкрити AI асистента">
-  <span class="fab-label">НЕМК Асистент 🤖</span>
+<button id="ai-chat-fab" onclick="toggleAiChat()"
+        title="НЕФК Асистент" aria-label="Відкрити AI асистента">
+  <span class="fab-label">НЕФК Асистент 🤖</span>
   <span id="fab-icon">🤖</span>
 </button>
 
-<!-- ══ AI CHAT WINDOW ══════════════════════════════════════════ -->
-<div id="ai-chat-window" role="dialog" aria-label="НЕМК AI Асистент" aria-modal="true">
+<!-- ══ AI CHAT WINDOW (redesigned) ════════════════════════════ -->
+<div id="ai-chat-window" role="dialog" aria-label="НЕФК AI Асистент" aria-modal="true">
+
+  <!-- Header -->
   <div class="ai-chat-header">
-    <div class="ai-avatar" aria-hidden="true">🤖</div>
-    <div>
-      <div class="fw-bold" style="font-size:.93rem;">НЕМК Асистент</div>
-      <div style="font-size:.7rem;opacity:.75;display:flex;align-items:center;gap:.3rem;">
-        <span style="width:6px;height:6px;border-radius:50%;background:#30d158;display:inline-block;" aria-hidden="true"></span>
-        Онлайн • Знає все про коледж
+    <div class="ai-avatar-wrap">
+      <div class="ai-avatar-inner">🤖</div>
+      <span class="ai-online-ring"></span>
+    </div>
+    <div class="flex-grow-1">
+      <div class="fw-700" style="font-size:.9rem;color:#fff;letter-spacing:-.2px;">
+        НЕФК Асистент
+      </div>
+      <div style="font-size:.67rem;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:.3rem;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#22c55e;
+                     box-shadow:0 0 6px #22c55e;display:inline-block;animation:pdot 2s ease infinite;"
+              aria-hidden="true"></span>
+        Онлайн 24/7 · Знає всі про НЕФК
       </div>
     </div>
-    <button onclick="toggleAiChat()" aria-label="Закрити чат"
-            style="margin-left:auto;background:rgba(255,255,255,.15);border:none;color:#fff;
-                   width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:.85rem;">✕</button>
-  </div>
-
-  <div class="ai-chat-messages" id="ai-messages" aria-live="polite" aria-atomic="false">
-    <div class="ai-msg bot">
-      👋 Привіт! Я <strong>НЕМК Асистент</strong>.<br>
-      Запитай про адресу, спеціальності, вступ, розклад або гуртожиток 🎓
+    <!-- Мінімізувати / закрити -->
+    <div class="d-flex gap-1">
+      <button onclick="toggleAiChat()" aria-label="Закрити"
+              class="ai-ctrl-btn">✕</button>
     </div>
   </div>
 
-  <div class="ai-suggestions" aria-label="Швидкі запитання">
-    <button class="ai-suggestion-btn" onclick="askBot('Де знаходиться коледж?')">📍 Адреса</button>
-    <button class="ai-suggestion-btn" onclick="askBot('Які спеціальності є?')">🎓 Спеціальності</button>
-    <button class="ai-suggestion-btn" onclick="askBot('Як вступити?')">📋 Вступ</button>
-    <button class="ai-suggestion-btn" onclick="askBot('Розклад занять')">📅 Розклад</button>
-    <button class="ai-suggestion-btn" onclick="askBot('Є гуртожиток?')">🏠 Гуртожиток</button>
-    <button class="ai-suggestion-btn" onclick="askBot('Стипендія')">💰 Стипендія</button>
+  <!-- Messages -->
+  <div class="ai-chat-messages" id="ai-messages" aria-live="polite" aria-atomic="false">
+    <div class="ai-msg bot">
+      <div class="ai-msg-inner">
+        👋 Привіт! Я <strong>НЕФК-Асистент</strong>!<br>
+        Запитай мене про що завгодно, пов'язане з коледжем.<br>
+        Або напиши <code style="font-size:.78rem;background:rgba(37,99,235,.15);
+          padding:.1rem .3rem;border-radius:5px;">жарт</code> — розвеселю! 😄
+      </div>
+      <div class="ai-msg-time">щойно</div>
+    </div>
   </div>
 
+  <!-- Quick suggestions — 2 ряди -->
+  <div class="ai-suggestions-wrap" aria-label="Швидкі запитання">
+    <div class="ai-sugg-row">
+      <button class="ai-sq" onclick="askBot('Де знаходиться коледж?')">📍 Адреса</button>
+      <button class="ai-sq" onclick="askBot('Які спеціальності є в НЕФК?')">🎓 Спеціальності</button>
+      <button class="ai-sq" onclick="askBot('Як вступити до НЕФК?')">📋 Вступ</button>
+      <button class="ai-sq" onclick="askBot('Розклад пар')">📅 Розклад</button>
+    </div>
+    <div class="ai-sugg-row">
+      <button class="ai-sq" onclick="askBot('Є гуртожиток?')">🏠 Гуртожиток</button>
+      <button class="ai-sq" onclick="askBot('Стипендія в НЕФК')">💰 Стипендія</button>
+      <button class="ai-sq" onclick="askBot('Розкажи жарт')">😄 Жарт</button>
+      <button class="ai-sq" onclick="askBot('Надихни мене вчитись')">💪 Мотивація</button>
+    </div>
+    <div class="ai-sugg-row">
+      <button class="ai-sq" onclick="askBot('Спорт та секції в коледжі')">⚽ Спорт</button>
+      <button class="ai-sq" onclick="askBot('Яку спеціальність обрати?')">🤔 Яку обрати?</button>
+      <button class="ai-sq" onclick="askBot('Бібліотека НЕФК')">📚 Бібліотека</button>
+      <button class="ai-sq" onclick="askBot('Заходи та події в коледжі')">🎭 Події</button>
+    </div>
+  </div>
+
+  <!-- Input -->
   <div class="ai-chat-input-area">
-    <input type="text" id="ai-input" placeholder="Запитай про НЕМК..."
+    <input type="text" id="ai-input"
+           placeholder="Запитай що завгодно..."
            onkeydown="if(event.key==='Enter')sendAiMsg()"
-           aria-label="Введи запитання">
+           aria-label="Запитання до НЕФК-Асистента"
+           autocomplete="off">
     <button class="ai-send-btn" onclick="sendAiMsg()" aria-label="Надіслати">
       <i class="bi bi-send-fill"></i>
     </button>
   </div>
+
+  <!-- Footer hint -->
+  <div style="padding:.4rem .9rem .55rem;text-align:center;
+              font-size:.63rem;color:rgba(255,255,255,.2);">
+    НЕФК Суспільство · Rule-based AI
+  </div>
+
 </div>
 
 <!-- ══ SCRIPTS ══════════════════════════════════════════════════ -->

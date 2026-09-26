@@ -1,36 +1,85 @@
 {% extends 'base.html' %}
-{% block title %}Пошук: {{ query }} — НЕМК Мережа{% endblock %}
+{% block title %}Пошук: {{ query }} — НЕМК Суспільство{% endblock %}
 
 {% block content %}
-<h4 class="fw-bold text-primary mb-4"><i class="bi bi-search me-2"></i>Результати пошуку</h4>
+
+<div class="page-header">
+  <h4>
+    <span class="page-header-icon"><i class="bi bi-search"></i></span>
+    Пошук людей
+  </h4>
+</div>
+
+<!-- Search bar -->
+<div class="page-glass-card p-3 mb-4">
+  <form method="get" action="{% url 'search_users' %}" role="search">
+    <div class="input-group">
+      <span class="input-group-text"
+            style="background:var(--input);border:1.5px solid var(--border);
+                   border-right:none;border-radius:12px 0 0 12px;color:var(--muted);">
+        <i class="bi bi-search"></i>
+      </span>
+      <input type="search" name="q" value="{{ query }}"
+             class="form-control"
+             style="border-left:none;border-radius:0 12px 12px 0;"
+             placeholder="Ім'я, нікнейм, місто…"
+             autocomplete="off" autofocus>
+      <button type="submit" class="btn btn-primary ms-2 fw-700 px-4">Знайти</button>
+    </div>
+  </form>
+</div>
 
 {% if query %}
-<p class="text-muted">За запитом: <strong>{{ query }}</strong> — знайдено {{ users|length }} користувачів</p>
+<p style="color:var(--muted);font-size:.87rem;margin-bottom:1rem;">
+  За запитом <strong style="color:var(--text);">«{{ query }}»</strong>
+  знайдено {{ users|length }} користувач{{ users|length|pluralize:"а,ів" }}
+</p>
 {% endif %}
 
 <div class="row g-3">
   {% for u in users %}
   <div class="col-md-4 col-sm-6">
-    <div class="card border-0 shadow-sm rounded-4 h-100">
-      <div class="card-body d-flex align-items-center gap-3">
-        <img src="{{ u.get_avatar_url }}" class="rounded-circle" width="56" height="56" style="object-fit:cover;" alt="{{ u.username }}">
-        <div class="flex-grow-1">
-          <div class="fw-bold">{{ u.get_full_name|default:u.username }}</div>
-          <div class="text-muted small">@{{ u.username }}</div>
-          {% if u.location %}<div class="text-muted small"><i class="bi bi-geo-alt me-1"></i>{{ u.location }}</div>{% endif %}
+    <div class="page-glass-card p-3 d-flex align-items-center gap-3"
+         style="transition:transform .2s,box-shadow .2s;"
+         onmouseover="this.style.transform='translateY(-3px)'"
+         onmouseout="this.style.transform=''">
+      <img src="{{ u.get_avatar_url }}" class="rounded-circle flex-shrink-0"
+           style="object-fit:cover;border:2px solid var(--border);"
+           width="58" height="58" alt="{{ u.username }}">
+      <div class="flex-grow-1 overflow-hidden">
+        <div class="fw-700" style="color:var(--text);">
+          {{ u.get_full_name|default:u.username }}
         </div>
-        <a href="{% url 'profile' u.username %}" class="btn btn-outline-primary btn-sm">
-          <i class="bi bi-person"></i>
-        </a>
+        <div class="small" style="color:var(--muted);">@{{ u.username }}</div>
+        {% if u.location %}
+        <div class="small mt-1" style="color:var(--muted);">
+          <i class="bi bi-geo-alt me-1" style="color:var(--p);"></i>{{ u.location }}
+        </div>
+        {% endif %}
       </div>
+      <a href="{% url 'profile' u.username %}"
+         class="btn btn-outline-primary btn-sm fw-600 flex-shrink-0">
+        <i class="bi bi-person"></i>
+      </a>
     </div>
   </div>
   {% empty %}
   {% if query %}
-  <div class="col-12 text-center text-muted py-5">
-    <i class="bi bi-person-x fs-1 d-block mb-2"></i>Нікого не знайдено.
+  <div class="col-12">
+    <div class="page-glass-card p-5 text-center">
+      <i class="bi bi-person-x" style="font-size:2.8rem;color:var(--muted);display:block;margin-bottom:.75rem;"></i>
+      <p style="color:var(--muted);margin:0;">Нікого не знайдено за запитом <strong>«{{ query }}»</strong></p>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12">
+    <div class="page-glass-card p-5 text-center">
+      <i class="bi bi-search" style="font-size:2.8rem;color:var(--muted);display:block;margin-bottom:.75rem;"></i>
+      <p style="color:var(--muted);margin:0;">Введи ім'я або нікнейм для пошуку</p>
+    </div>
   </div>
   {% endif %}
   {% endfor %}
 </div>
+
 {% endblock %}

@@ -62,11 +62,20 @@ def feed_view(request):
     from accounts.models import User as UserModel
     popular_users = UserModel.objects.exclude(id=user.id).order_by('-date_joined')[:8]
 
+    # Друзі поточного юзера для правого сайдбару
+    my_friends = list(Friendship.get_friends(user).select_related()[:8])
+
+    # Pending incoming friend requests count
+    from friends.models import FriendRequest
+    pending_count = FriendRequest.objects.filter(to_user=user, status='pending').count()
+
     context = {
         'posts': posts,
         'post_form': post_form,
         'comment_form': comment_form,
         'popular_users': popular_users,
+        'my_friends': my_friends,
+        'pending_count': pending_count,
     }
     return render(request, 'posts/feed.html', context)
 

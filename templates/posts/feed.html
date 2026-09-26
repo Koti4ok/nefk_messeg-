@@ -355,82 +355,119 @@
   <!-- ══ RIGHT SIDEBAR ══════════════════════════════════════ -->
   <div class="col-lg-3 d-none d-lg-block">
 
-    <!-- Online users -->
+    <!-- ── My Friends ───────────────────────────────────────── -->
     <div class="sidebar-widget mb-3">
-      <div class="fw-bold small mb-3" style="color:var(--text);">
-        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;
-                     background:var(--green);margin-right:.4rem;
-                     box-shadow:0 0 8px var(--green);" aria-hidden="true"></span>
-        Онлайн зараз
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="fw-700 small" style="color:var(--text);">
+          <i class="bi bi-people-fill me-1" style="color:var(--p);"></i>Мої друзі
+        </div>
+        <a href="{% url 'friends' %}" class="glass-badge" style="text-decoration:none;font-size:.7rem;">
+          {% if pending_count %}<span style="color:var(--red);">+{{ pending_count }} </span>{% endif %}
+          Всі →
+        </a>
       </div>
-      {% for u in popular_users|slice:":5" %}
-      <a href="{% url 'profile' u.username %}" class="sidebar-link"
-         style="padding:.4rem .5rem;margin-bottom:.2rem;">
-        <div style="position:relative;">
-          <img src="{{ u.get_avatar_url }}" class="rounded-circle"
-               style="object-fit:cover;" width="32" height="32" alt="{{ u.username }}">
+
+      {% for friend in my_friends %}
+      <a href="{% url 'profile' friend.username %}"
+         class="d-flex align-items-center gap-2 mb-2 text-decoration-none sidebar-link"
+         style="padding:.4rem .5rem;">
+        <div style="position:relative;flex-shrink:0;">
+          <img src="{{ friend.get_avatar_url }}" class="rounded-circle"
+               style="object-fit:cover;border:2px solid var(--border);"
+               width="34" height="34" alt="{{ friend.username }}">
           <span style="position:absolute;bottom:0;right:0;width:9px;height:9px;
                        border-radius:50%;background:var(--green);border:2px solid var(--card-solid);"
                 aria-hidden="true"></span>
         </div>
-        <span class="small fw-500" style="color:var(--text);">
-          {{ u.get_full_name|default:u.username }}
-        </span>
+        <div class="overflow-hidden">
+          <div class="small fw-600 text-truncate" style="color:var(--text);">
+            {{ friend.get_full_name|default:friend.username }}
+          </div>
+          <div style="font-size:.7rem;color:var(--muted);">@{{ friend.username }}</div>
+        </div>
       </a>
       {% empty %}
-      <span class="small" style="color:var(--muted);">Поки нікого онлайн</span>
+      <div class="text-center py-3">
+        <i class="bi bi-people" style="font-size:1.8rem;color:var(--muted);display:block;margin-bottom:.4rem;"></i>
+        <p style="color:var(--muted);font-size:.8rem;margin:0;">Друзів поки немає</p>
+        <a href="{% url 'search_users' %}"
+           class="btn btn-sm fw-700 mt-2"
+           style="background:rgba(99,102,241,.12);color:var(--p);border:1px solid rgba(99,102,241,.2);
+                  border-radius:10px;font-size:.75rem;padding:.28rem .75rem;">
+          Знайти людей
+        </a>
+      </div>
       {% endfor %}
+
+      {% if pending_count %}
+      <a href="{% url 'friends' %}"
+         class="d-flex align-items-center gap-2 mt-2 p-2 rounded-3 text-decoration-none"
+         style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);">
+        <i class="bi bi-person-exclamation" style="color:var(--red);font-size:1rem;"></i>
+        <span style="color:var(--red);font-size:.82rem;font-weight:700;">
+          {{ pending_count }} нових запит{{ pending_count|pluralize:",,ів" }}
+        </span>
+      </a>
+      {% endif %}
     </div>
 
-    <!-- Trending topics (static — no Django string iteration) -->
-    <div class="sidebar-widget mb-3">
-      <div class="fw-bold small mb-3" style="color:var(--text);">🔥 Популярні теми</div>
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <span style="color:var(--p);font-size:.83rem;font-weight:600;">#НЕМК</span>
-        <span class="badge rounded-pill" style="background:var(--hover);color:var(--p);font-size:.7rem;">142</span>
-      </div>
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <span style="color:var(--p);font-size:.83rem;font-weight:600;">#Навчання</span>
-        <span class="badge rounded-pill" style="background:var(--hover);color:var(--p);font-size:.7rem;">89</span>
-      </div>
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <span style="color:var(--p);font-size:.83rem;font-weight:600;">#Практика</span>
-        <span class="badge rounded-pill" style="background:var(--hover);color:var(--p);font-size:.7rem;">67</span>
-      </div>
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <span style="color:var(--p);font-size:.83rem;font-weight:600;">#ІТ</span>
-        <span class="badge rounded-pill" style="background:var(--hover);color:var(--p);font-size:.7rem;">54</span>
-      </div>
-      <div class="d-flex justify-content-between align-items-center">
-        <span style="color:var(--p);font-size:.83rem;font-weight:600;">#Спорт</span>
-        <span class="badge rounded-pill" style="background:var(--hover);color:var(--p);font-size:.7rem;">43</span>
-      </div>
-    </div>
-
-    <!-- Suggested users -->
+    <!-- ── Suggested people ──────────────────────────────────── -->
     {% if popular_users %}
-    <div class="sidebar-widget">
-      <div class="fw-bold small mb-3" style="color:var(--text);">✨ Можливо знаєш</div>
-      {% for u in popular_users|slice:":4" %}
-      <div class="d-flex align-items-center gap-2 mb-3">
-        <img src="{{ u.get_avatar_url }}" class="rounded-circle"
-             style="object-fit:cover;border:2px solid var(--border);" width="36" height="36"
-             alt="{{ u.username }}">
+    <div class="sidebar-widget mb-3">
+      <div class="fw-700 small mb-3" style="color:var(--text);">
+        <i class="bi bi-stars me-1" style="color:var(--yellow);"></i>Можливо знаєш
+      </div>
+      {% for u in popular_users|slice:":5" %}
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <a href="{% url 'profile' u.username %}" style="flex-shrink:0;">
+          <img src="{{ u.get_avatar_url }}" class="rounded-circle"
+               style="object-fit:cover;border:2px solid var(--border);"
+               width="34" height="34" alt="{{ u.username }}">
+        </a>
         <div class="flex-grow-1 overflow-hidden">
-          <div class="small fw-bold text-truncate" style="color:var(--text);">
+          <div class="small fw-600 text-truncate" style="color:var(--text);">
             {{ u.get_full_name|default:u.username }}
           </div>
           <div style="font-size:.7rem;color:var(--muted);">@{{ u.username }}</div>
         </div>
         <a href="{% url 'follow_user' u.username %}"
-           class="btn btn-sm fw-600"
-           style="font-size:.73rem;padding:.22rem .65rem;border-radius:20px;
-                  background:rgba(99,102,241,.12);color:var(--p);border:1px solid rgba(99,102,241,.25);"
-           aria-label="Підписатися на {{ u.username }}">+</a>
+           class="btn btn-sm fw-700 flex-shrink-0"
+           style="font-size:.72rem;padding:.22rem .6rem;border-radius:10px;
+                  background:rgba(99,102,241,.12);color:var(--p);
+                  border:1px solid rgba(99,102,241,.25);white-space:nowrap;">
+          + Читати
+        </a>
       </div>
       {% endfor %}
     </div>
     {% endif %}
+
+    <!-- ── Trending topics ───────────────────────────────────── -->
+    <div class="sidebar-widget">
+      <div class="fw-700 small mb-3" style="color:var(--text);">
+        <i class="bi bi-fire me-1" style="color:var(--orange);"></i>Популярні теми
+      </div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span style="color:var(--p);font-size:.83rem;font-weight:700;">#НЕМК</span>
+        <span class="glass-badge" style="font-size:.68rem;">142</span>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span style="color:var(--p);font-size:.83rem;font-weight:700;">#Навчання</span>
+        <span class="glass-badge" style="font-size:.68rem;">89</span>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span style="color:var(--p);font-size:.83rem;font-weight:700;">#Практика</span>
+        <span class="glass-badge" style="font-size:.68rem;">67</span>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span style="color:var(--p);font-size:.83rem;font-weight:700;">#ІТ</span>
+        <span class="glass-badge" style="font-size:.68rem;">54</span>
+      </div>
+      <div class="d-flex justify-content-between align-items-center">
+        <span style="color:var(--p);font-size:.83rem;font-weight:700;">#Спорт</span>
+        <span class="glass-badge" style="font-size:.68rem;">43</span>
+      </div>
+    </div>
 
   </div><!-- /.right sidebar -->
 </div><!-- /.row -->

@@ -1,41 +1,71 @@
 {% extends 'base.html' %}
-{% block title %}Груповий чат — НЕМК Мережа{% endblock %}
+{% block title %}Груповий чат — НЕМК Суспільство{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-md-6">
-    <div class="card border-0 shadow rounded-4">
-      <div class="card-body p-4">
-        <h4 class="fw-bold text-primary mb-4"><i class="bi bi-people-fill me-2"></i>Новий груповий чат</h4>
-        <form method="post">
-          {% csrf_token %}
-          <div class="mb-3">
-            <label class="form-label fw-semibold small">Назва чату</label>
-            <input type="text" name="name" class="form-control" required placeholder="Назва групового чату">
-          </div>
-          <div class="mb-3">
-            <label class="form-label fw-semibold small">Додати учасників (з друзів)</label>
-            {% for friend in friends %}
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" name="users" value="{{ friend.id }}" id="u{{ friend.id }}">
-              <label class="form-check-label" for="u{{ friend.id }}">
-                <img src="{{ friend.get_avatar_url }}" class="rounded-circle me-1" width="24" height="24" style="object-fit:cover;">
-                {{ friend.get_full_name|default:friend.username }}
-              </label>
-            </div>
-            {% empty %}
-            <p class="text-muted small">Немає друзів для додавання.</p>
-            {% endfor %}
-          </div>
-          <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary px-4">
-              <i class="bi bi-check-lg me-1"></i>Створити
-            </button>
-            <a href="{% url 'conversations' %}" class="btn btn-outline-secondary">Скасувати</a>
-          </div>
-        </form>
-      </div>
+  <div class="col-md-7 col-lg-5">
+
+    <div class="page-header">
+      <h4>
+        <span class="page-header-icon"><i class="bi bi-people-fill"></i></span>
+        Новий груповий чат
+      </h4>
+      <a href="{% url 'conversations' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-x-lg me-1"></i>Скасувати
+      </a>
     </div>
+
+    <div class="page-glass-card p-4">
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="mb-4">
+          <label for="id_name" class="form-label">
+            <i class="bi bi-chat-dots me-1" style="color:var(--p);"></i>Назва чату
+          </label>
+          <input type="text" name="name" id="id_name" class="form-control"
+                 required placeholder="Наприклад: Група ТП-21">
+        </div>
+
+        <div class="mb-4">
+          <div class="form-label mb-2">
+            <i class="bi bi-people me-1" style="color:var(--p);"></i>Учасники
+          </div>
+          {% for friend in friends %}
+          <div class="user-chip mb-2" style="cursor:pointer;"
+               onclick="this.querySelector('input').click()">
+            <input class="form-check-input flex-shrink-0 m-0"
+                   type="checkbox" name="users"
+                   value="{{ friend.id }}" id="u{{ friend.id }}"
+                   onclick="event.stopPropagation()">
+            <img src="{{ friend.get_avatar_url }}" class="rounded-circle flex-shrink-0"
+                 style="object-fit:cover;border:2px solid var(--border);"
+                 width="36" height="36" alt="{{ friend.username }}">
+            <label class="flex-grow-1 fw-600 small mb-0" for="u{{ friend.id }}"
+                   style="color:var(--text);cursor:pointer;">
+              {{ friend.get_full_name|default:friend.username }}
+              <span style="color:var(--muted);font-weight:400;"> @{{ friend.username }}</span>
+            </label>
+          </div>
+          {% empty %}
+          <div class="page-glass-card p-3 text-center" style="background:var(--hover-bg);">
+            <p style="color:var(--muted);margin:0;font-size:.88rem;">
+              Немає друзів для додавання.
+              <a href="{% url 'search_users' %}" style="color:var(--p);">Знайти людей</a>
+            </p>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary px-4 fw-700">
+            <i class="bi bi-check-lg me-1"></i>Створити
+          </button>
+          <a href="{% url 'conversations' %}" class="btn btn-outline-secondary px-4">Скасувати</a>
+        </div>
+      </form>
+    </div>
+
   </div>
 </div>
 {% endblock %}
