@@ -1,0 +1,582 @@
+{% extends 'base.html' %}
+{% block title %}🛡️ Security Dashboard — НЕФК{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Security Dashboard Styles ── */
+.sec-header {
+  background: linear-gradient(135deg, #0c1a3a, #1e3a8a);
+  border-radius: 22px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(59,130,246,.2);
+  position: relative;
+  overflow: hidden;
+}
+.sec-header::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    45deg, transparent, transparent 20px,
+    rgba(59,130,246,.03) 20px, rgba(59,130,246,.03) 40px
+  );
+}
+.sec-header-content { position: relative; z-index: 1; }
+
+/* Stat cards */
+.sec-stat {
+  background: var(--card);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 1.2rem 1.4rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+}
+.sec-stat:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.sec-stat-icon {
+  width: 44px; height: 44px; border-radius: 13px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; margin-bottom: .75rem;
+}
+.sec-stat-num  { font-size: 2rem; font-weight: 900; line-height: 1; margin-bottom: .2rem; }
+.sec-stat-lbl  { font-size: .78rem; color: var(--muted); font-weight: 600; }
+
+/* Pulse dot */
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #22c55e; display: inline-block;
+  box-shadow: 0 0 8px #22c55e;
+  animation: livePulse 1.5s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%,100% { box-shadow: 0 0 0 0   rgba(34,197,94,.5); }
+  50%      { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+}
+
+/* Tables */
+.sec-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  font-size: .84rem;
+}
+.sec-table th {
+  background: rgba(37,99,235,.08);
+  padding: .65rem .9rem;
+  font-weight: 700; font-size: .74rem;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .05em;
+  border-bottom: 1px solid var(--divider);
+}
+.sec-table td {
+  padding: .6rem .9rem;
+  border-bottom: 1px solid var(--divider);
+  color: var(--text);
+  vertical-align: middle;
+}
+.sec-table tr:last-child td { border-bottom: none; }
+.sec-table tr:hover td { background: var(--hover); }
+
+/* Severity badges */
+.sev-badge {
+  display: inline-block;
+  padding: .15rem .6rem; border-radius: 20px;
+  font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+}
+.sev-error   { background: rgba(239,68,68,.15);  color: #f87171; border: 1px solid rgba(239,68,68,.3); }
+.sev-warning { background: rgba(245,158,11,.12); color: #fbbf24; border: 1px solid rgba(245,158,11,.25); }
+.sev-info    { background: rgba(34,197,94,.12);  color: #4ade80; border: 1px solid rgba(34,197,94,.25); }
+
+/* IP badge */
+.ip-badge {
+  font-family: monospace; font-size: .82rem;
+  background: rgba(37,99,235,.1);
+  color: var(--p);
+  padding: .18rem .55rem; border-radius: 8px;
+  border: 1px solid rgba(37,99,235,.2);
+}
+
+/* Action form */
+.ban-form { display: flex; gap: .5rem; flex-wrap: wrap; }
+.ban-form input[type="text"] {
+  flex: 1; min-width: 140px;
+  padding: .42rem .75rem;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--input);
+  color: var(--text);
+  font-size: .84rem;
+  font-family: monospace;
+}
+
+/* Mini chart bar */
+.mini-bar {
+  display: inline-block;
+  height: 6px; border-radius: 3px;
+  background: linear-gradient(90deg,#2563eb,#0ea5e9);
+  vertical-align: middle;
+  transition: width .5s ease;
+}
+
+/* Live indicator */
+.sec-live {
+  display: flex; align-items: center; gap: .5rem;
+  font-size: .78rem; font-weight: 700; color: #22c55e;
+}
+
+/* Block rate meter */
+.block-meter {
+  height: 8px; border-radius: 4px;
+  background: var(--bg3);
+  overflow: hidden; margin-top: .5rem;
+}
+.block-meter-fill {
+  height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg,#22c55e,#ef4444);
+  transition: width .8s ease;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <!-- ── HEADER ── -->
+  <div class="col-12">
+    <div class="sec-header">
+      <div class="sec-header-content d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+          <div class="d-flex align-items-center gap-3 mb-1">
+            <div style="font-size:2rem;">🛡️</div>
+            <div>
+              <h4 class="fw-900 mb-0" style="color:#fff;letter-spacing:-.3px;">Security Dashboard</h4>
+              <div style="color:rgba(255,255,255,.5);font-size:.82rem;">
+                НЕФК Anti-DDoS · Rate Limiting · Threat Detection
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+          <div class="sec-live">
+            <span class="live-dot"></span>
+            Live · оновлення кожні 5с
+          </div>
+          <div style="color:rgba(255,255,255,.5);font-size:.8rem;">
+            Uptime: <strong id="live-uptime" style="color:#60a5fa;">{{ uptime }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STAT CARDS ── -->
+  <div class="col-6 col-md-3">
+    <div class="sec-stat">
+      <div class="sec-stat-icon" style="background:rgba(37,99,235,.12);color:var(--p);">
+        <i class="bi bi-activity"></i>
+      </div>
+      <div class="sec-stat-num" id="live-total" style="color:var(--p);">{{ stats.total_requests }}</div>
+      <div class="sec-stat-lbl">Всього запитів</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="sec-stat">
+      <div class="sec-stat-icon" style="background:rgba(239,68,68,.12);color:#f87171;">
+        <i class="bi bi-shield-x"></i>
+      </div>
+      <div class="sec-stat-num" id="live-blocked" style="color:#f87171;">{{ stats.blocked_requests }}</div>
+      <div class="sec-stat-lbl">Заблоковано</div>
+      <div class="block-meter">
+        <div class="block-meter-fill" id="live-meter" style="width:{{ block_rate }}%"></div>
+      </div>
+      <div style="font-size:.68rem;color:var(--muted);margin-top:.3rem;">
+        <span id="live-blockrate">{{ block_rate }}</span>% від усіх
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="sec-stat">
+      <div class="sec-stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;">
+        <i class="bi bi-clock-history"></i>
+      </div>
+      <div class="sec-stat-num" id="live-tempbans" style="color:#fbbf24;">{{ stats.temp_bans_issued }}</div>
+      <div class="sec-stat-lbl">Тимчасових банів</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="sec-stat">
+      <div class="sec-stat-icon" style="background:rgba(239,68,68,.12);color:#f87171;">
+        <i class="bi bi-ban"></i>
+      </div>
+      <div class="sec-stat-num" id="live-permbans" style="color:#f87171;">{{ stats.perm_bans_issued }}</div>
+      <div class="sec-stat-lbl">Постійних банів</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="sec-stat">
+      <div class="sec-stat-icon" style="background:rgba(139,92,246,.12);color:#a78bfa;">
+        <i class="bi bi-robot"></i>
+      </div>
+      <div class="sec-stat-num" id="live-ua" style="color:#a78bfa;">{{ stats.suspicious_ua_blocked }}</div>
+      <div class="sec-stat-lbl">Підозрілих UA</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="sec-stat">
+      <div class="sec-stat-icon" style="background:rgba(239,68,68,.12);color:#f87171;">
+        <i class="bi bi-virus"></i>
+      </div>
+      <div class="sec-stat-num" id="live-paths" style="color:#f87171;">{{ stats.malicious_path_blocked }}</div>
+      <div class="sec-stat-lbl">Шкідливих шляхів</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="sec-stat">
+      <div class="sec-stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;">
+        <i class="bi bi-people-fill"></i>
+      </div>
+      <div class="sec-stat-num" style="color:#4ade80;">{{ total_tracked_ips }}</div>
+      <div class="sec-stat-lbl">Відстежуваних IP</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="sec-stat">
+      <div class="sec-stat-icon" style="background:rgba(37,99,235,.12);color:var(--p);">
+        <i class="bi bi-clock-fill"></i>
+      </div>
+      <div class="sec-stat-num" style="color:var(--p);font-size:1.2rem;">{{ uptime }}</div>
+      <div class="sec-stat-lbl">Час роботи</div>
+    </div>
+  </div>
+
+  <!-- ── MANUAL BAN FORM ── -->
+  <div class="col-12">
+    <div class="page-glass-card p-4">
+      <h6 class="fw-800 mb-3" style="color:var(--text);">
+        <i class="bi bi-tools me-2" style="color:var(--p);"></i>Ручне керування IP
+      </h6>
+      <div class="row g-3">
+
+        <!-- Розбанити -->
+        <div class="col-md-4">
+          <div style="font-size:.78rem;color:var(--muted);font-weight:700;margin-bottom:.5rem;">
+            ✅ Розбанити IP
+          </div>
+          <form method="post" class="ban-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="unban">
+            <input type="text" name="ip" placeholder="192.168.1.1" required>
+            <button type="submit" class="btn btn-success btn-sm fw-700">Розбанити</button>
+          </form>
+        </div>
+
+        <!-- Тимчасовий бан -->
+        <div class="col-md-4">
+          <div style="font-size:.78rem;color:var(--muted);font-weight:700;margin-bottom:.5rem;">
+            ⏳ Тимчасовий бан
+          </div>
+          <form method="post" class="ban-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="temp_ban">
+            <input type="text" name="ip" placeholder="IP адреса" required>
+            <select name="duration" style="padding:.42rem .55rem;border-radius:10px;border:1.5px solid var(--border);background:var(--input);color:var(--text);font-size:.8rem;">
+              <option value="300">5 хв</option>
+              <option value="3600" selected>1 год</option>
+              <option value="86400">24 год</option>
+            </select>
+            <input type="text" name="reason" placeholder="Причина">
+            <button type="submit" class="btn btn-outline-danger btn-sm fw-700">Забанити</button>
+          </form>
+        </div>
+
+        <!-- Постійний бан -->
+        <div class="col-md-4">
+          <div style="font-size:.78rem;color:var(--muted);font-weight:700;margin-bottom:.5rem;">
+            🚫 Постійний бан
+          </div>
+          <form method="post" class="ban-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="ban">
+            <input type="text" name="ip" placeholder="IP адреса" required>
+            <input type="text" name="reason" placeholder="Причина">
+            <button type="submit" class="btn btn-danger btn-sm fw-700"
+                    onclick="return confirm('ПОСТІЙНИЙ бан для цього IP?')">
+              PERM BAN
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ACTIVE BANS ── -->
+  <div class="col-lg-6">
+    <div class="page-glass-card p-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h6 class="fw-800 mb-0" style="color:var(--text);">
+          <i class="bi bi-clock-history me-2" style="color:#fbbf24;"></i>
+          Активні тимчасові бани
+          <span class="glass-badge ms-1">{{ temp_bans|length }}</span>
+        </h6>
+      </div>
+      {% if temp_bans %}
+      <div style="overflow-x:auto;">
+        <table class="sec-table">
+          <thead>
+            <tr>
+              <th>IP</th>
+              <th>Спливає</th>
+              <th>Залишилось</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ban in temp_bans %}
+            <tr>
+              <td><span class="ip-badge">{{ ban.ip }}</span></td>
+              <td style="font-size:.78rem;color:var(--muted);">{{ ban.expires }}</td>
+              <td>
+                <span style="color:#fbbf24;font-weight:700;font-size:.82rem;">{{ ban.remaining }}с</span>
+              </td>
+              <td>
+                <form method="post" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="unban">
+                  <input type="hidden" name="ip" value="{{ ban.ip }}">
+                  <button type="submit" class="btn btn-sm fw-700"
+                          style="background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.25);border-radius:8px;padding:.22rem .55rem;font-size:.72rem;">
+                    Розбанити
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="text-align:center;color:var(--muted);padding:1.5rem 0;font-size:.88rem;">
+        <i class="bi bi-check-circle-fill" style="color:#4ade80;font-size:1.5rem;display:block;margin-bottom:.5rem;"></i>
+        Немає активних тимчасових банів
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── PERM BANS ── -->
+  <div class="col-lg-6">
+    <div class="page-glass-card p-4">
+      <h6 class="fw-800 mb-3" style="color:var(--text);">
+        <i class="bi bi-ban me-2" style="color:#f87171;"></i>
+        Постійні бани
+        <span class="glass-badge danger ms-1">{{ perm_bans|length }}</span>
+      </h6>
+      {% if perm_bans %}
+      <div style="overflow-x:auto;max-height:280px;overflow-y:auto;">
+        <table class="sec-table">
+          <thead><tr><th>IP</th><th>Причина</th><th></th></tr></thead>
+          <tbody>
+            {% for ip, reason in perm_bans %}
+            <tr>
+              <td><span class="ip-badge">{{ ip }}</span></td>
+              <td style="font-size:.78rem;color:var(--muted);">{{ reason|truncatechars:40 }}</td>
+              <td>
+                <form method="post" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="unban">
+                  <input type="hidden" name="ip" value="{{ ip }}">
+                  <button type="submit" class="btn btn-sm fw-700"
+                          style="background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.25);border-radius:8px;padding:.22rem .55rem;font-size:.72rem;">
+                    Розбанити
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="text-align:center;color:var(--muted);padding:1.5rem 0;font-size:.88rem;">
+        <i class="bi bi-shield-check" style="color:#4ade80;font-size:1.5rem;display:block;margin-bottom:.5rem;"></i>
+        Немає постійних банів
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── TOP IPs ── -->
+  <div class="col-lg-7">
+    <div class="page-glass-card p-4">
+      <h6 class="fw-800 mb-3" style="color:var(--text);">
+        <i class="bi bi-bar-chart-fill me-2" style="color:var(--p);"></i>
+        Топ IP за кількістю запитів
+      </h6>
+      <div style="overflow-x:auto;">
+        <table class="sec-table">
+          <thead>
+            <tr>
+              <th>#</th><th>IP</th><th>Запитів</th>
+              <th>Попереджень</th><th>Банів</th>
+              <th>Остання активність</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ip, data in top_ips %}
+            <tr>
+              <td style="color:var(--muted);font-size:.78rem;">{{ forloop.counter }}</td>
+              <td><span class="ip-badge">{{ ip }}</span></td>
+              <td>
+                <span style="font-weight:700;color:var(--text);">{{ data.count }}</span>
+                <span class="mini-bar" style="width:{{ data.count|divisibleby:10 }}px;max-width:80px;margin-left:.4rem;"></span>
+              </td>
+              <td>
+                {% if data.warnings %}
+                <span class="sev-badge sev-warning">{{ data.warnings }}</span>
+                {% else %}
+                <span style="color:var(--muted);">0</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if data.banned_count %}
+                <span class="sev-badge sev-error">{{ data.banned_count }}</span>
+                {% else %}
+                <span style="color:var(--muted);">0</span>
+                {% endif %}
+              </td>
+              <td style="font-size:.72rem;color:var(--muted);">
+                {% load humanize %}{{ data.last_seen|timesince }} тому
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SECURITY LOG ── -->
+  <div class="col-lg-5">
+    <div class="page-glass-card p-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h6 class="fw-800 mb-0" style="color:var(--text);">
+          <i class="bi bi-journal-text me-2" style="color:var(--p);"></i>
+          Журнал подій
+          <span id="live-events-count" class="glass-badge ms-1">{{ events|length }}</span>
+        </h6>
+        <form method="post" style="display:inline;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="clear_logs">
+          <button type="submit" class="btn btn-sm fw-600"
+                  style="font-size:.72rem;background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:.22rem .6rem;"
+                  onclick="return confirm('Очистити журнал?')">
+            Очистити
+          </button>
+        </form>
+      </div>
+      <div id="events-log" style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:.3rem;">
+        {% for ev in events %}
+        <div class="d-flex align-items-start gap-2 p-2 rounded-3"
+             style="background:var(--bg3);border:1px solid var(--border);animation:slideUp .3s ease both;animation-delay:{{ forloop.counter0 }}0ms;">
+          <span class="sev-badge
+            {% if ev.severity == 'ERROR' %}sev-error
+            {% elif ev.severity == 'WARNING' %}sev-warning
+            {% else %}sev-info{% endif %}"
+            style="flex-shrink:0;font-size:.6rem;">{{ ev.severity }}</span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:.75rem;font-weight:700;color:var(--text);">{{ ev.event }}</div>
+            <div style="font-size:.68rem;color:var(--muted);">
+              <span class="ip-badge" style="font-size:.62rem;">{{ ev.ip }}</span>
+              · {{ ev.time_fmt }}
+            </div>
+            {% if ev.detail %}
+            <div style="font-size:.67rem;color:var(--muted);margin-top:.15rem;word-break:break-all;">{{ ev.detail|truncatechars:60 }}</div>
+            {% endif %}
+          </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;color:var(--muted);padding:2rem 0;font-size:.88rem;">
+          <i class="bi bi-journal-x" style="font-size:1.5rem;display:block;margin-bottom:.5rem;opacity:.4;"></i>
+          Журнал порожній
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CONFIG ── -->
+  <div class="col-12">
+    <div class="page-glass-card p-4">
+      <h6 class="fw-800 mb-3" style="color:var(--text);">
+        <i class="bi bi-gear-fill me-2" style="color:var(--p);"></i>
+        Поточна конфігурація
+      </h6>
+      <div class="row g-3">
+        <div class="col-sm-6 col-md-3">
+          <div style="background:var(--bg3);border-radius:12px;padding:.85rem;border:1px solid var(--border);">
+            <div style="font-size:.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:.3rem;">Глобальний ліміт</div>
+            <div style="font-weight:800;color:var(--p);">{{ config.global.limit }} req / {{ config.global.window }}с</div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div style="background:var(--bg3);border-radius:12px;padding:.85rem;border:1px solid var(--border);">
+            <div style="font-size:.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:.3rem;">Burst ліміт</div>
+            <div style="font-weight:800;color:#fbbf24;">{{ config.global_burst.limit }} req / {{ config.global_burst.window }}с</div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div style="background:var(--bg3);border-radius:12px;padding:.85rem;border:1px solid var(--border);">
+            <div style="font-size:.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:.3rem;">Auth ліміт</div>
+            <div style="font-weight:800;color:#f87171;">{{ config.auth.limit }} req / {{ config.auth.window }}с</div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div style="background:var(--bg3);border-radius:12px;padding:.85rem;border:1px solid var(--border);">
+            <div style="font-size:.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:.3rem;">Авто-бан після</div>
+            <div style="font-weight:800;color:#a78bfa;">{{ config.auto_ban_after }} попереджень → {{ config.auto_ban_duration }}с</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Live оновлення кожні 5 секунд
+setInterval(async () => {
+  try {
+    const r = await fetch('/api/security/stats/', {
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    });
+    if (!r.ok) return;
+    const d = await r.json();
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+    set('live-total',      d.total_requests);
+    set('live-blocked',    d.blocked_requests);
+    set('live-blockrate',  d.block_rate);
+    set('live-tempbans',   d.temp_bans_issued);
+    set('live-permbans',   d.perm_bans_issued);
+    set('live-ua',         d.suspicious_ua);
+    set('live-paths',      d.malicious_paths);
+    set('live-uptime',     d.uptime);
+
+    const meter = document.getElementById('live-meter');
+    if (meter) meter.style.width = d.block_rate + '%';
+
+    // Оновлення журналу
+    if (d.recent_events && d.recent_events.length) {
+      const log = document.getElementById('events-log');
+      if (log && log.children.length === 0) {
+        // Тільки якщо пусто — перезавантажити
+      }
+      set('live-events-count', d.recent_events.length + '+');
+    }
+  } catch(e) {}
+}, 5000);
+</script>
+{% endblock %}

@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% block title %}{{ profile_user.get_full_name|default:profile_user.username }} — Профіль{% endblock %}
+
+{% block content %}
+
+<!-- ══ COVER ══════════════════════════════════════════════════ -->
+<div class="cover-header mb-5">
+  <img src="{{ profile_user.get_cover_url }}" alt="обкладинка">
+  <div class="cover-header-overlay"></div>
+  <img src="{{ profile_user.get_avatar_url }}"
+       class="cover-avatar" alt="{{ profile_user.username }}">
+</div>
+
+<div class="row mt-4 g-3">
+
+  <!-- ══ LEFT ══════════════════════════════════════════════════ -->
+  <div class="col-lg-8">
+
+    <!-- Header -->
+    <div class="page-glass-card p-4 mb-3">
+      <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+        <div>
+          <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+            <h3 class="fw-900 mb-0" style="color:var(--text);letter-spacing:-.5px;">
+              {{ profile_user.get_full_name|default:profile_user.username }}
+            </h3>
+            {% if profile_user.is_admin_role %}
+            <span class="glass-badge danger"><i class="bi bi-shield-fill-check me-1"></i>Адмін</span>
+            {% endif %}
+          </div>
+          <span style="color:var(--muted);font-size:.88rem;">@{{ profile_user.username }}</span>
+
+          <!-- Meta -->
+          <div class="d-flex flex-wrap gap-3 mt-2" style="color:var(--muted);font-size:.83rem;">
+            {% if profile_user.bio %}
+            <span style="color:var(--text2);">{{ profile_user.bio }}</span>
+            {% endif %}
+          </div>
+          <div class="d-flex flex-wrap gap-3 mt-2" style="color:var(--muted);font-size:.83rem;">
+            {% if profile_user.location %}
+            <span><i class="bi bi-geo-alt me-1" style="color:var(--p);"></i>{{ profile_user.location }}</span>
+            {% endif %}
+            {% if profile_user.website %}
+            <span>
+              <i class="bi bi-link-45deg me-1" style="color:var(--p);"></i>
+              <a href="{{ profile_user.website }}" target="_blank" rel="noopener"
+                 style="color:var(--p);text-decoration:none;">{{ profile_user.website }}</a>
+            </span>
+            {% endif %}
+            <span><i class="bi bi-calendar3 me-1" style="color:var(--p);"></i>З {{ profile_user.created_at|date:"d.m.Y" }}</span>
+          </div>
+
+          <!-- Stats -->
+          <div class="d-flex gap-4 mt-3">
+            <div>
+              <span class="fw-800" style="color:var(--text);font-size:1.1rem;">{{ followers_count }}</span>
+              <span style="color:var(--muted);font-size:.82rem;margin-left:.25rem;">підписників</span>
+            </div>
+            <div>
+              <span class="fw-800" style="color:var(--text);font-size:1.1rem;">{{ following_count }}</span>
+              <span style="color:var(--muted);font-size:.82rem;margin-left:.25rem;">підписок</span>
+            </div>
+            <div>
+              <span class="fw-800" style="color:var(--text);font-size:1.1rem;">{{ posts|length }}</span>
+              <span style="color:var(--muted);font-size:.82rem;margin-left:.25rem;">публікацій</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex gap-2 flex-wrap">
+          {% if is_self %}
+          <a href="{% url 'edit_profile' %}" class="btn btn-primary btn-sm fw-700">
+            <i class="bi bi-pencil me-1"></i>Редагувати
+          </a>
+          {% else %}
+            {% if are_friends %}
+            <a href="{% url 'remove_friend' profile_user.username %}"
+               class="btn btn-outline-secondary btn-sm fw-600">
+              <i class="bi bi-person-dash me-1"></i>Друг
+            </a>
+            {% elif pending_request %}
+            <button class="btn btn-outline-secondary btn-sm fw-600" disabled>
+              <i class="bi bi-hourglass me-1"></i>Запит надіслано
+            </button>
+            {% else %}
+            <a href="{% url 'send_friend_request' profile_user.username %}"
+               class="btn btn-primary btn-sm fw-700">
+              <i class="bi bi-person-plus me-1"></i>Додати
+            </a>
+            {% endif %}
+
+            {% if is_following %}
+            <a href="{% url 'unfollow_user' profile_user.username %}"
+               class="btn btn-outline-secondary btn-sm fw-600">
+              <i class="bi bi-bell-slash me-1"></i>Відписатись
+            </a>
+            {% else %}
+            <a href="{% url 'follow_user' profile_user.username %}"
+               class="btn btn-outline-primary btn-sm fw-600">
+              <i class="bi bi-bell me-1"></i>Підписатись
+            </a>
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Posts -->
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <span class="fw-800" style="color:var(--text);font-size:1rem;">Публікації</span>
+      <span class="glass-badge">{{ posts|length }}</span>
+    </div>
+
+    {% for post in posts %}
+    <div class="post-card-gl">
+      <div class="card-body">
+        <!-- Author row -->
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <img src="{{ post.author.get_avatar_url }}" class="rounded-circle flex-shrink-0"
+               style="object-fit:cover;border:2px solid var(--border);"
+               width="40" height="40" alt="{{ post.author.username }}">
+          <div class="flex-grow-1">
+            <div class="fw-700 small" style="color:var(--text);">
+              {{ post.author.get_full_name|default:post.author.username }}
+            </div>
+            <div class="small" style="color:var(--muted);">{{ post.created_at|date:"d.m.Y H:i" }}</div>
+          </div>
+          {% if request.user == post.author or request.user.is_admin_role %}
+          <a href="{% url 'delete_post' post.pk %}"
+             class="btn btn-sm"
+             style="color:var(--red);background:rgba(248,113,113,.1);border:none;border-radius:9px;"
+             onclick="return confirm('Видалити публікацію?')"
+             title="Видалити">
+            <i class="bi bi-trash3"></i>
+          </a>
+          {% endif %}
+        </div>
+
+        <!-- Repost notice -->
+        {% if post.original_post %}
+        <div class="mb-2 px-3 py-2 rounded-3"
+             style="border:1px solid var(--border);background:var(--hover-bg);font-size:.83rem;color:var(--muted);">
+          <i class="bi bi-arrow-repeat me-1" style="color:var(--p);"></i>
+          Репост від <strong style="color:var(--text);">@{{ post.original_post.author.username }}</strong>:
+          {{ post.original_post.content|truncatechars:80 }}
+        </div>
+        {% endif %}
+
+        <p class="mb-2" style="color:var(--text);line-height:1.65;">{{ post.content }}</p>
+
+        {% if post.image %}
+        <img src="{{ post.image.url }}" class="img-fluid rounded-4 mb-2 w-100"
+             style="max-height:320px;object-fit:cover;" alt="">
+        {% endif %}
+        {% if post.link %}
+        <a href="{{ post.link }}" target="_blank" rel="noopener"
+           class="d-inline-flex align-items-center gap-1 mb-2 small"
+           style="color:var(--p);text-decoration:none;">
+          <i class="bi bi-link-45deg"></i>{{ post.link|truncatechars:55 }}
+        </a>
+        {% endif %}
+      </div>
+
+      <!-- Actions -->
+      <div class="post-actions" style="padding:0 .5rem .35rem;">
+        <button class="post-action-btn like-btn {% if request.user in post.likes.all %}liked{% endif %}"
+                data-post-id="{{ post.pk }}" data-url="{% url 'like_post' post.pk %}"
+                aria-label="Вподобати">
+          <i class="bi bi-heart{% if request.user in post.likes.all %}-fill{% endif %}"></i>
+          <span class="like-count">{{ post.like_count }}</span>
+        </button>
+        <a href="{% url 'post_detail' post.pk %}" class="post-action-btn" style="text-decoration:none;">
+          <i class="bi bi-chat"></i> {{ post.comment_count }}
+        </a>
+        <a href="{% url 'repost' post.pk %}" class="post-action-btn" style="text-decoration:none;">
+          <i class="bi bi-arrow-repeat"></i> Поширити
+        </a>
+      </div>
+    </div>
+    {% empty %}
+    <div class="page-glass-card p-5 text-center">
+      <i class="bi bi-grid-3x3-gap" style="font-size:2.5rem;color:var(--muted);display:block;margin-bottom:.75rem;"></i>
+      <p style="color:var(--muted);margin:0;">Публікацій ще немає.</p>
+    </div>
+    {% endfor %}
+
+  </div><!-- /col-lg-8 -->
+
+  <!-- ══ RIGHT SIDEBAR ══════════════════════════════════════════ -->
+  <div class="col-lg-4">
+    <div class="sidebar-widget">
+      <div class="fw-800 mb-3" style="color:var(--text);font-size:.95rem;">
+        <i class="bi bi-people me-2" style="color:var(--p);"></i>Друзі
+        <span class="glass-badge ms-1">{{ friends|length }}</span>
+      </div>
+      <div class="row g-2">
+        {% for friend in friends %}
+        <div class="col-4 text-center">
+          <a href="{% url 'profile' friend.username %}" class="text-decoration-none">
+            <img src="{{ friend.get_avatar_url }}" class="rounded-circle mb-1"
+                 style="object-fit:cover;border:2px solid var(--border);"
+                 width="52" height="52" alt="{{ friend.username }}">
+            <div class="small fw-600" style="color:var(--text);font-size:.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              {{ friend.first_name|default:friend.username }}
+            </div>
+          </a>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-2" style="color:var(--muted);font-size:.85rem;">
+          Немає друзів.
+        </div>
+        {% endfor %}
+      </div>
+      {% if not is_self %}
+      <a href="{% url 'friends' %}" class="btn btn-outline-primary btn-sm w-100 mt-3 fw-600">
+        Всі друзі
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

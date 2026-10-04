@@ -1,0 +1,1137 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}НЕФК Суспільство — Офіційна соціальна мережа коледжу{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ══════════════════════════════════════════════════════════════
+   HOME PAGE — Clean Liquid Glass Design
+   Нововолинський електромеханічний фаховий коледж
+══════════════════════════════════════════════════════════════ */
+
+/* ── HERO ─────────────────────────────────────────────────── */
+.h-hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: #060f1e;
+}
+
+/* Google Street View embed як фон */
+.h-hero-map {
+  position: absolute;
+  inset: 0;
+  opacity: .28;
+  pointer-events: none;
+}
+.h-hero-map iframe {
+  width: 100%; height: 100%;
+  border: none;
+  filter: saturate(.6) brightness(.7);
+}
+
+/* Blue glass overlay */
+.h-hero-glass {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(6,15,30,.92) 0%, rgba(30,58,138,.35) 50%, rgba(6,15,30,.88) 100%);
+}
+
+/* Animated orbs */
+.h-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  animation: h-orb-drift ease-in-out infinite;
+}
+@keyframes h-orb-drift {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%      { transform: translate(30px,-40px) scale(1.08); }
+  66%      { transform: translate(-25px,20px) scale(.94); }
+}
+
+.h-hero-content { position: relative; z-index: 3; padding: 5rem 0 4rem; }
+
+/* Badge */
+.h-badge {
+  display: inline-flex; align-items: center; gap: .5rem;
+  background: rgba(37,99,235,.14);
+  border: 1px solid rgba(59,130,246,.3);
+  border-radius: 50px;
+  padding: .36rem 1rem;
+  color: #93c5fd;
+  font-size: .78rem; font-weight: 700;
+  letter-spacing: .03em;
+  backdrop-filter: blur(8px);
+  animation: fadeUp .6s ease both;
+  margin-bottom: 1.4rem;
+}
+
+/* Title */
+.h-title {
+  font-size: clamp(3rem, 6.5vw, 5.5rem);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.0;
+  letter-spacing: -3px;
+  margin-bottom: 1.25rem;
+  animation: fadeUp .7s ease .1s both;
+}
+
+.h-title-sub {
+  display: block;
+  background: linear-gradient(90deg,#93c5fd 0%,#38bdf8 40%,#bfdbfe 70%,#93c5fd 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3.5s linear infinite;
+}
+
+.h-desc {
+  color: rgba(255,255,255,.58);
+  font-size: 1.05rem; line-height: 1.8;
+  max-width: 480px;
+  margin-bottom: 2.2rem;
+  animation: fadeUp .7s ease .2s both;
+}
+
+/* CTA buttons */
+.h-btn-blue {
+  display: inline-flex; align-items: center; gap: .5rem;
+  padding: .9rem 2.2rem; border-radius: 14px;
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  color: #fff; font-weight: 700; font-size: .97rem;
+  text-decoration: none; border: none;
+  box-shadow: 0 8px 28px rgba(37,99,235,.45);
+  transition: transform .2s, filter .2s, box-shadow .2s;
+}
+.h-btn-blue:hover { color:#fff; transform:translateY(-2px); filter:brightness(1.1); box-shadow:0 12px 36px rgba(37,99,235,.6); }
+
+.h-btn-ghost {
+  display: inline-flex; align-items: center; gap: .5rem;
+  padding: .9rem 2.2rem; border-radius: 14px;
+  background: rgba(255,255,255,.07);
+  color: rgba(255,255,255,.85); font-weight: 600; font-size: .97rem;
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,.18);
+  backdrop-filter: blur(12px);
+  transition: background .2s, border-color .2s;
+}
+.h-btn-ghost:hover { background:rgba(255,255,255,.14); color:#fff; border-color:rgba(255,255,255,.3); }
+
+/* Stats bar */
+.h-stats {
+  display: flex; gap: 0; margin-top: 2.5rem;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 16px; overflow: hidden;
+  backdrop-filter: blur(16px);
+  animation: fadeUp .7s ease .35s both;
+}
+.h-stat {
+  flex: 1; text-align: center;
+  padding: 1rem .5rem;
+  border-right: 1px solid rgba(255,255,255,.08);
+}
+.h-stat:last-child { border-right: none; }
+.h-stat-num { font-size: 1.6rem; font-weight: 900; color: #60a5fa; line-height: 1; }
+.h-stat-lbl { font-size: .7rem; color: rgba(255,255,255,.4); margin-top: .18rem; }
+
+/* Hero right — glass card */
+.h-card {
+  background: rgba(255,255,255,.045);
+  border: 1px solid rgba(255,255,255,.1);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border-radius: 28px; overflow: hidden;
+  width: 100%; max-width: 380px;
+  box-shadow:
+    0 24px 64px rgba(0,0,0,.35),
+    inset 0 1px 0 rgba(255,255,255,.1);
+  animation: floatY 7s ease-in-out infinite;
+  position: relative;
+}
+.h-card::before {
+  content:'';
+  position:absolute; inset:0; border-radius:inherit;
+  padding:1px;
+  background:linear-gradient(135deg,rgba(37,99,235,.4),rgba(14,165,233,.2),rgba(37,99,235,.35));
+  -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude;
+  pointer-events:none;
+}
+
+.h-card-head {
+  background: linear-gradient(135deg,rgba(37,99,235,.3),rgba(14,165,233,.2));
+  padding: 1.1rem 1.2rem;
+  display: flex; align-items: center; gap: .75rem;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.h-card-logo {
+  width: 44px; height: 44px; border-radius: 13px;
+  background: linear-gradient(135deg,#2563eb,#0ea5e9);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(37,99,235,.4);
+}
+.h-online-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  display: inline-block;
+  animation: pdot 2s ease infinite;
+}
+
+.h-card-members {
+  padding: .8rem 1.2rem;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.h-member-row {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .45rem .5rem; border-radius: 10px;
+  margin-bottom: .2rem;
+  transition: background .15s; cursor:default;
+}
+.h-member-row:hover { background: rgba(255,255,255,.06); }
+
+.h-card-features {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.h-feat {
+  display: flex; flex-direction: column; align-items: center;
+  gap: .3rem; padding: .9rem .5rem;
+  border-right: 1px solid rgba(255,255,255,.06);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  color: rgba(255,255,255,.5); font-size: .7rem; font-weight: 600;
+  transition: background .15s, color .15s;
+  cursor: default;
+}
+.h-feat:nth-child(2n){ border-right:none; }
+.h-feat:nth-child(n+3){ border-bottom:none; }
+.h-feat i { font-size: 1.1rem; color: #60a5fa; }
+.h-feat:hover { background:rgba(37,99,235,.12); color:rgba(255,255,255,.8); }
+
+/* Wave */
+.h-wave { position:absolute; bottom:-2px; left:0; right:0; line-height:0; z-index:3; }
+.h-wave svg { width:100%; height:80px; }
+
+/* ── SECTION HELPERS ──────────────────────────────────────── */
+.h-label {
+  display: inline-block;
+  padding: .25rem .9rem; border-radius: 20px;
+  background: rgba(37,99,235,.1); color: var(--p);
+  font-size: .74rem; font-weight: 700;
+  border: 1px solid rgba(37,99,235,.2);
+  text-transform: uppercase; letter-spacing: .07em;
+}
+.h-h2 {
+  font-size: clamp(1.85rem,3.2vw,2.6rem);
+  font-weight: 900; color: var(--text);
+  letter-spacing: -.5px; line-height: 1.1;
+  margin-bottom: .5rem;
+}
+.h-lead { color:var(--muted); font-size:.95rem; max-width:520px; margin:0 auto; line-height:1.7; }
+
+/* Glass card reusable */
+.gl-card {
+  background: var(--card);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border-radius: 22px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.1);
+  position: relative;
+  transition: transform .25s, box-shadow .25s;
+}
+.gl-card::before {
+  content:'';
+  position:absolute; inset:0; border-radius:inherit;
+  padding:1px;
+  background:linear-gradient(135deg,rgba(37,99,235,.25),rgba(14,165,233,.12),rgba(37,99,235,.2));
+  -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude;
+  pointer-events:none; transition:opacity .25s;
+}
+.gl-card > * { position:relative; z-index:1; }
+.gl-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,.15); }
+.gl-card:hover::before { opacity:1.8; }
+
+/* ── PHOTOS SECTION ───────────────────────────────────────── */
+.h-street-view {
+  border-radius: 22px; overflow: hidden;
+  height: 380px;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+}
+.h-street-view iframe { width:100%; height:100%; border:none; display:block; }
+.h-street-view-label {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: .7rem 1rem;
+  background: linear-gradient(transparent, rgba(0,0,0,.7));
+  color: #fff; font-size: .82rem; font-weight: 600;
+  display: flex; align-items: center; gap: .4rem;
+  z-index: 2;
+}
+
+/* ── ABOUT STATS ──────────────────────────────────────────── */
+.h-about-stat {
+  text-align: center;
+  padding: 1.1rem .75rem;
+  background: var(--bg3);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  transition: transform .2s;
+}
+.h-about-stat:hover { transform:translateY(-3px); }
+.h-about-stat-num { font-size:1.8rem; font-weight:900; color:var(--p); line-height:1; }
+.h-about-stat-lbl { font-size:.72rem; color:var(--muted); margin-top:.2rem; }
+
+/* ── SPEC CARDS ───────────────────────────────────────────── */
+.h-spec {
+  padding: 1.6rem 1.4rem;
+  height: 100%;
+}
+.h-spec-code {
+  position: absolute; top: .9rem; right: 1rem;
+  font-size: 2.2rem; font-weight: 900; line-height: 1;
+  color: rgba(37,99,235,.09); letter-spacing: -2px;
+}
+.h-spec-icon {
+  width: 56px; height: 56px; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; color: #fff;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 16px rgba(37,99,235,.3);
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.gl-card:hover .h-spec-icon { transform: scale(1.1) rotate(-6deg); }
+.h-spec-title { font-size:1rem; font-weight:800; color:var(--text); margin-bottom:.5rem; line-height:1.3; }
+.h-spec-desc  { font-size:.83rem; color:var(--muted); line-height:1.65; margin-bottom:.9rem; }
+.h-pills { display:flex; flex-wrap:wrap; gap:.3rem; }
+.h-pill {
+  font-size:.68rem; font-weight:700;
+  padding:.15rem .55rem; border-radius:20px;
+  background:rgba(37,99,235,.1); color:var(--p);
+  border:1px solid rgba(37,99,235,.18);
+}
+
+/* ── STEPS ────────────────────────────────────────────────── */
+.h-steps-line {
+  display: none;
+  position: absolute; top: 32px;
+  left: calc(12.5% + 30px); right: calc(12.5% + 30px);
+  height: 2px;
+  background: linear-gradient(90deg,var(--p),var(--accent));
+  opacity: .2; z-index: 0;
+}
+@media(min-width:768px){ .h-steps-line{display:block;} }
+
+.h-step {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; padding: 0 1rem; position: relative; z-index: 1;
+}
+.h-step-circle {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg,#2563eb,#0ea5e9);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; color: #fff;
+  box-shadow: 0 6px 22px rgba(37,99,235,.4);
+  margin-bottom: .9rem; flex-shrink: 0;
+}
+.h-step-n { font-size:.68rem; font-weight:800; color:var(--p); text-transform:uppercase; letter-spacing:.07em; margin-bottom:.2rem; }
+.h-step-title { font-size:.97rem; font-weight:800; color:var(--text); margin-bottom:.4rem; }
+.h-step-text { font-size:.82rem; color:var(--muted); line-height:1.65; margin:0; max-width:180px; }
+
+/* ── CONTACT ROW ──────────────────────────────────────────── */
+.h-cinfo {
+  display: flex; align-items: flex-start; gap: .85rem;
+  margin-bottom: 1rem;
+}
+.h-cinfo:last-of-type { margin-bottom: 0; }
+.h-cinfo-icon {
+  width: 40px; height: 40px; min-width: 40px;
+  border-radius: 12px; background: rgba(37,99,235,.1);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--p); font-size: .97rem;
+  flex-shrink: 0;
+}
+.h-cinfo-lbl { font-size:.71rem; color:var(--muted); font-weight:700; margin-bottom:.18rem; text-transform:uppercase; letter-spacing:.04em; }
+.h-cinfo-val { font-size:.9rem; color:var(--text); font-weight:500; line-height:1.5; }
+
+/* Social buttons */
+.h-soc {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .45rem .95rem; border-radius: 10px;
+  font-size: .8rem; font-weight: 700;
+  text-decoration: none; color: var(--text2);
+  background: var(--bg3); border: 1px solid var(--border);
+  transition: background .18s, color .18s, transform .15s, border-color .15s;
+}
+.h-soc:hover { background:var(--c,var(--p)); color:#fff; border-color:transparent; transform:translateY(-2px); }
+
+/* ── CTA DARK SECTION ─────────────────────────────────────── */
+.h-cta {
+  position: relative; overflow: hidden;
+  background: linear-gradient(135deg,#060f1e 0%,#1e3a8a 55%,#0c1a3a 100%);
+}
+.h-cta-content { padding: 5rem 0; position: relative; z-index: 2; }
+
+.h-feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.h-feat-card {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 16px; padding: 1.1rem;
+  backdrop-filter: blur(12px);
+  transition: background .2s, transform .2s;
+}
+.h-feat-card:hover { background: rgba(255,255,255,.1); transform:translateY(-2px); }
+.h-feat-card-icon {
+  width: 38px; height: 38px; border-radius: 11px;
+  background: linear-gradient(135deg,#2563eb,#0ea5e9);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .9rem; color: #fff;
+  box-shadow: 0 3px 10px rgba(37,99,235,.35);
+  margin-bottom: .65rem;
+}
+.h-feat-card-title { font-size:.88rem; font-weight:700; color:#fff; margin-bottom:.2rem; }
+.h-feat-card-desc  { font-size:.75rem; color:rgba(255,255,255,.45); line-height:1.5; }
+
+/* ── ACHIEVEMENTS ─────────────────────────────────────────── */
+.h-achiev {
+  display: flex; align-items: flex-start; gap: .9rem;
+  padding: 1rem; border-radius: 14px;
+  background: rgba(37,99,235,.06);
+  border: 1px solid rgba(37,99,235,.12);
+  transition: background .2s;
+}
+.h-achiev:hover { background:rgba(37,99,235,.1); }
+.h-achiev-icon {
+  width: 42px; height: 42px; min-width: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg,#2563eb,#0ea5e9);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; color: #fff;
+  box-shadow: 0 3px 10px rgba(37,99,235,.3);
+}
+.h-achiev-title { font-size:.9rem; font-weight:700; color:var(--text); margin-bottom:.2rem; }
+.h-achiev-desc  { font-size:.8rem; color:var(--muted); line-height:1.55; margin:0; }
+
+/* ── MEMBERS GRID ─────────────────────────────────────────── */
+.h-member-card {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 1rem .5rem;
+  background: var(--card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  transition: transform .2s, box-shadow .2s;
+}
+.h-member-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-lg); }
+.h-member-name { font-size:.78rem; font-weight:700; color:var(--text); margin-top:.5rem; }
+.h-member-user { font-size:.68rem; color:var(--muted); }
+
+/* ── TIMELINE (news/events) ───────────────────────────────── */
+.h-timeline { position:relative; padding-left:1.8rem; }
+.h-timeline::before {
+  content:''; position:absolute; left:0; top:0; bottom:0;
+  width:2px; background:linear-gradient(to bottom,var(--p),var(--accent));
+  border-radius:2px; opacity:.3;
+}
+.h-tl-item { position:relative; margin-bottom:1.4rem; }
+.h-tl-item:last-child { margin-bottom:0; }
+.h-tl-dot {
+  position:absolute; left:-2rem; top:.15rem;
+  width:12px; height:12px; border-radius:50%;
+  background:var(--p); border:2px solid var(--card-solid);
+  box-shadow:0 0 0 3px rgba(37,99,235,.2);
+}
+.h-tl-date { font-size:.7rem; font-weight:700; color:var(--p); margin-bottom:.2rem; text-transform:uppercase; letter-spacing:.05em; }
+.h-tl-title { font-size:.9rem; font-weight:700; color:var(--text); margin-bottom:.2rem; }
+.h-tl-desc  { font-size:.8rem; color:var(--muted); line-height:1.55; margin:0; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if user.is_authenticated %}
+<div class="auth-bg">
+  <div class="text-center">
+    <div style="width:72px;height:72px;border-radius:20px;
+                background:linear-gradient(135deg,var(--p),var(--accent));
+                display:flex;align-items:center;justify-content:center;
+                font-size:1.9rem;margin:0 auto 1.1rem;
+                box-shadow:0 8px 28px rgba(37,99,235,.35);">
+      <i class="bi bi-house-fill" style="color:#fff;"></i>
+    </div>
+    <h2 class="fw-800 mb-2" style="color:var(--text);letter-spacing:-.5px;">
+      Вітаємо, {{ user.first_name|default:user.username }}! 👋
+    </h2>
+    <p style="color:var(--muted);" class="mb-4">
+      Перейди до стрічки, щоб побачити оновлення друзів та коледжу.
+    </p>
+    <a href="{% url 'feed' %}" class="btn btn-primary px-5 py-2 fw-700">
+      <i class="bi bi-rss me-2"></i>Відкрити стрічку
+    </a>
+  </div>
+</div>
+
+{% else %}
+
+<!-- ═══════════════════════════════════════════════════════
+     HERO — Google Street View + liquid glass
+═══════════════════════════════════════════════════════ -->
+<section class="h-hero">
+
+  <!-- Street View як фон -->
+  <div class="h-hero-map">
+    <iframe
+      src="https://www.google.com/maps/embed?pb=!4v1700000000000!6m8!1m7!1sCAoSLEFGMVFpcE0tNWF6QW1lOG1MX0ZCWGN0dzlpbmJaVXF3aXFqWmJpZFdXcg!2m2!1d50.7372!2d24.1642!3f0!4f0!5f0.7820865974627469"
+      allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+    </iframe>
+  </div>
+  <div class="h-hero-glass"></div>
+
+  <!-- Orbs -->
+  <div class="h-orb" style="width:600px;height:600px;background:rgba(37,99,235,.10);top:-150px;left:-200px;animation-duration:20s;"></div>
+  <div class="h-orb" style="width:450px;height:450px;background:rgba(14,165,233,.08);bottom:-100px;right:-100px;animation-duration:16s;animation-delay:-6s;"></div>
+  <div class="h-orb" style="width:320px;height:320px;background:rgba(99,102,241,.06);top:40%;right:25%;animation-duration:22s;animation-delay:-10s;"></div>
+
+  <div id="hero-particles" aria-hidden="true"
+       style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1;"></div>
+
+  <div class="container h-hero-content">
+    <div class="row align-items-center g-5">
+
+      <!-- LEFT -->
+      <div class="col-lg-6">
+        <div class="h-badge">
+          <span class="pulse-dot"></span>
+          Нововолинськ · вул. Шахтарська, 16 · Волинська обл.
+        </div>
+
+        <h1 class="h-title">
+          НЕФК<br>
+          <span class="h-title-sub">Суспільство</span>
+        </h1>
+
+        <p class="h-desc">
+          Офіційна соціальна платформа студентів і викладачів
+          <strong style="color:rgba(255,255,255,.8);">Нововолинського електромеханічного фахового коледжу</strong>.
+          Спілкуйся, навчайся, будь у центрі студентського життя.
+        </p>
+
+        <div class="d-flex gap-3 flex-wrap">
+          <a href="{% url 'register' %}" class="h-btn-blue">
+            <i class="bi bi-person-plus-fill"></i> Зареєструватись
+          </a>
+          <a href="{% url 'login' %}" class="h-btn-ghost">
+            <i class="bi bi-box-arrow-in-right"></i> Увійти
+          </a>
+        </div>
+
+        <!-- Stats bar -->
+        <div class="h-stats">
+          <div class="h-stat">
+            <div class="h-stat-num">1961</div>
+            <div class="h-stat-lbl">рік заснування</div>
+          </div>
+          <div class="h-stat">
+            <div class="h-stat-num">60+</div>
+            <div class="h-stat-lbl">років досвіду</div>
+          </div>
+          <div class="h-stat">
+            <div class="h-stat-num">4</div>
+            <div class="h-stat-lbl">спеціальності</div>
+          </div>
+          <div class="h-stat">
+            <div class="h-stat-num">10к+</div>
+            <div class="h-stat-lbl">випускників</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT — hero glass card -->
+      <div class="col-lg-6 d-none d-lg-flex justify-content-end">
+        <div class="h-card">
+          <div class="h-card-head">
+            <div class="h-card-logo">🏫</div>
+            <div class="flex-grow-1">
+              <div class="fw-700 small" style="color:#fff;">НЕФК Суспільство</div>
+              <div class="d-flex align-items-center gap-1"
+                   style="color:rgba(255,255,255,.45);font-size:.71rem;">
+                <span class="h-online-dot"></span>
+                Онлайн · {{ popular_users|length }} учасників
+              </div>
+            </div>
+            <a href="{% url 'register' %}"
+               style="padding:.3rem .8rem;border-radius:8px;background:rgba(37,99,235,.4);
+                      color:#93c5fd;font-size:.74rem;font-weight:700;text-decoration:none;
+                      border:1px solid rgba(59,130,246,.3);white-space:nowrap;
+                      transition:background .2s;"
+               onmouseover="this.style.background='rgba(37,99,235,.7)'"
+               onmouseout="this.style.background='rgba(37,99,235,.4)'">
+              + Вступити
+            </a>
+          </div>
+
+          <div class="h-card-members">
+            {% for u in popular_users|slice:":4" %}
+            <div class="h-member-row">
+              <img src="{{ u.get_avatar_url }}" class="rounded-circle"
+                   style="width:30px;height:30px;object-fit:cover;
+                          border:1.5px solid rgba(255,255,255,.2);"
+                   alt="{{ u.username }}">
+              <div class="flex-grow-1">
+                <div style="font-size:.78rem;font-weight:600;color:rgba(255,255,255,.82);">
+                  {{ u.get_full_name|default:u.username }}
+                </div>
+                <div style="font-size:.67rem;color:rgba(255,255,255,.38);">@{{ u.username }}</div>
+              </div>
+              <span class="h-online-dot" style="width:7px;height:7px;"></span>
+            </div>
+            {% endfor %}
+          </div>
+
+          <div class="h-card-features">
+            <div class="h-feat"><i class="bi bi-chat-dots-fill"></i> Чат</div>
+            <div class="h-feat"><i class="bi bi-people-fill"></i> Друзі</div>
+            <div class="h-feat"><i class="bi bi-grid-3x3-gap-fill"></i> Групи</div>
+            <div class="h-feat"><i class="bi bi-robot"></i> AI-бот</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="h-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0,40 C360,80 1080,0 1440,40 L1440,90 L0,90 Z" fill="var(--bg)"/>
+    </svg>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     ФОТО КОЛЕДЖУ — Street View embed + інфо
+═══════════════════════════════════════════════════════ -->
+<section class="py-5">
+  <div class="container">
+    <div class="text-center mb-5 reveal">
+      <span class="h-label">📍 Наш коледж</span>
+      <h2 class="h-h2 mt-2">Нovovolynsk EMF College</h2>
+      <p class="h-lead">Провідний технічний коледж Волинської області.
+        Сучасна база, досвідчені викладачі, реальна практика.</p>
+    </div>
+
+    <div class="row g-4 reveal">
+      <!-- Street View -->
+      <div class="col-lg-7">
+        <div class="h-street-view">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2485.1234567890!2d24.1642!3d50.7372!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNTDCsDQ0JzEzLjkiTiAyNMKwMDknNTEuMSJF!5e0!3m2!1suk!2sua!4v1700000000000!5m2!1suk!2sua"
+            allowfullscreen loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            title="НЕФК Нововолинськ на карті">
+          </iframe>
+          <div class="h-street-view-label">
+            <i class="bi bi-geo-alt-fill" style="color:#60a5fa;"></i>
+            вул. Шахтарська, 16, м. Нововолинськ
+            <a href="https://maps.google.com/?q=вул.+Шахтарська+16+Нововолинськ"
+               target="_blank" rel="noopener"
+               style="color:#93c5fd;margin-left:auto;font-size:.75rem;text-decoration:none;">
+              Відкрити в Google Maps →
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- About card -->
+      <div class="col-lg-5 d-flex flex-column gap-3">
+        <div class="gl-card p-4">
+          <div style="width:46px;height:46px;border-radius:14px;
+                      background:linear-gradient(135deg,#2563eb,#0ea5e9);
+                      display:flex;align-items:center;justify-content:center;
+                      font-size:1.25rem;color:#fff;margin-bottom:1rem;
+                      box-shadow:0 4px 14px rgba(37,99,235,.3);">
+            <i class="bi bi-mortarboard-fill"></i>
+          </div>
+          <h5 class="fw-800 mb-2" style="color:var(--text);">Про коледж</h5>
+          <p style="color:var(--muted);font-size:.88rem;line-height:1.75;margin:0;">
+            НЕФК засновано у <strong style="color:var(--text);">1961 році</strong>.
+            За понад 60 років підготовлено понад <strong style="color:var(--text);">10 000</strong> фахівців
+            для промислових підприємств України та світу.
+            Входить до числа провідних фахових коледжів Волині.
+          </p>
+        </div>
+
+        <!-- Stats grid -->
+        <div class="row g-2">
+          <div class="col-6">
+            <div class="h-about-stat">
+              <div class="h-about-stat-num">~500</div>
+              <div class="h-about-stat-lbl">студентів</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="h-about-stat">
+              <div class="h-about-stat-num">40+</div>
+              <div class="h-about-stat-lbl">викладачів</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="h-about-stat">
+              <div class="h-about-stat-num">4</div>
+              <div class="h-about-stat-lbl">спеціальності</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="h-about-stat">
+              <div class="h-about-stat-num">⭐ 4.8</div>
+              <div class="h-about-stat-lbl">рейтинг</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     СПЕЦІАЛЬНОСТІ
+═══════════════════════════════════════════════════════ -->
+<section class="py-5" style="background:var(--bg3);">
+  <div class="container">
+    <div class="text-center mb-5 reveal">
+      <span class="h-label">🎓 Освіта</span>
+      <h2 class="h-h2 mt-2">Спеціальності</h2>
+      <p class="h-lead">Чотири сучасні напрями підготовки.
+        Держзамовлення, практика на підприємствах, диплом державного зразка.</p>
+    </div>
+
+    <div class="row g-4 reveal-stagger">
+
+      <div class="col-md-6 col-lg-3">
+        <div class="gl-card h-spec">
+          <div class="h-spec-code">F7</div>
+          <div class="h-spec-icon" style="background:linear-gradient(135deg,#2563eb,#0ea5e9);">
+            <i class="bi bi-cpu-fill"></i>
+          </div>
+          <div class="h-spec-title">Комп'ютерна інженерія</div>
+          <p class="h-spec-desc">Програмування Python/C++, системне адміністрування, мережева інфраструктура, кібербезпека.</p>
+          <div class="h-pills">
+            <span class="h-pill">Python</span>
+            <span class="h-pill">Linux</span>
+            <span class="h-pill">Мережі</span>
+            <span class="h-pill">SQL</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="gl-card h-spec">
+          <div class="h-spec-code">G3</div>
+          <div class="h-spec-icon" style="background:linear-gradient(135deg,#0369a1,#0ea5e9);">
+            <i class="bi bi-lightning-charge-fill"></i>
+          </div>
+          <div class="h-spec-title">Електрична інженерія</div>
+          <p class="h-spec-desc">Електромонтаж, промислова автоматизація, ПЛК Siemens/Mitsubishi, SCADA-системи.</p>
+          <div class="h-pills">
+            <span class="h-pill">ПЛК</span>
+            <span class="h-pill">SCADA</span>
+            <span class="h-pill">Автоматика</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="gl-card h-spec">
+          <div class="h-spec-code">D7</div>
+          <div class="h-spec-icon" style="background:linear-gradient(135deg,#1d4ed8,#3b82f6);">
+            <i class="bi bi-shop-window"></i>
+          </div>
+          <div class="h-spec-title">Торгівля</div>
+          <p class="h-spec-desc">Бізнес-аналітика, менеджмент, маркетинг, торговельна діяльність, 1С Підприємство.</p>
+          <div class="h-pills">
+            <span class="h-pill">1С</span>
+            <span class="h-pill">Маркетинг</span>
+            <span class="h-pill">Бізнес</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="gl-card h-spec">
+          <div class="h-spec-code">G9</div>
+          <div class="h-spec-icon" style="background:linear-gradient(135deg,#0c4a6e,#0284c7);">
+            <i class="bi bi-gear-wide-connected"></i>
+          </div>
+          <div class="h-spec-title">Прикладна механіка</div>
+          <p class="h-spec-desc">Металообробка, верстати з ЧПК, CAD/CAM проектування, роботизовані комплекси.</p>
+          <div class="h-pills">
+            <span class="h-pill">ЧПК</span>
+            <span class="h-pill">CAD</span>
+            <span class="h-pill">SolidWorks</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     ДОСЯГНЕННЯ + ПОДІЇ
+═══════════════════════════════════════════════════════ -->
+<section class="py-5">
+  <div class="container">
+    <div class="row g-4">
+
+      <!-- Досягнення -->
+      <div class="col-lg-6 reveal">
+        <span class="h-label">🏆 Досягнення</span>
+        <h3 class="h-h2 mt-2 mb-4">Чим пишається НЕФК</h3>
+        <div class="d-flex flex-column gap-3">
+          <div class="h-achiev">
+            <div class="h-achiev-icon"><i class="bi bi-trophy-fill"></i></div>
+            <div>
+              <div class="h-achiev-title">Переможці всеукраїнських олімпіад</div>
+              <p class="h-achiev-desc">Студенти НЕФК щороку перемагають на олімпіадах з комп'ютерних дисциплін, електроніки та механіки.</p>
+            </div>
+          </div>
+          <div class="h-achiev">
+            <div class="h-achiev-icon"><i class="bi bi-stars"></i></div>
+            <div>
+              <div class="h-achiev-title">60%+ викладачів вищої категорії</div>
+              <p class="h-achiev-desc">Педагогічний склад — лауреати конкурсів «Педагог року» та «Наставник». Кандидати наук і доценти.</p>
+            </div>
+          </div>
+          <div class="h-achiev">
+            <div class="h-achiev-icon"><i class="bi bi-briefcase-fill"></i></div>
+            <div>
+              <div class="h-achiev-title">Працевлаштування 85%+</div>
+              <p class="h-achiev-desc">Більшість випускників отримують роботу ще під час навчання або одразу після отримання диплому.</p>
+            </div>
+          </div>
+          <div class="h-achiev">
+            <div class="h-achiev-icon"><i class="bi bi-buildings-fill"></i></div>
+            <div>
+              <div class="h-achiev-title">Партнери — провідні компанії</div>
+              <p class="h-achiev-desc">IT-компанії, промислові підприємства Волині та всієї України. Реальна практика на виробництві.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Календар подій / таймлайн -->
+      <div class="col-lg-6 reveal">
+        <span class="h-label">📅 Календар</span>
+        <h3 class="h-h2 mt-2 mb-4">Важливі події</h3>
+        <div class="gl-card p-4">
+          <div class="h-timeline">
+            <div class="h-tl-item">
+              <div class="h-tl-dot" style="background:#2563eb;"></div>
+              <div class="h-tl-date">1 вересня</div>
+              <div class="h-tl-title">🎒 День знань</div>
+              <p class="h-tl-desc">Урочиста лінійка, зустріч першокурсників, святковий концерт.</p>
+            </div>
+            <div class="h-tl-item">
+              <div class="h-tl-dot" style="background:#0ea5e9;"></div>
+              <div class="h-tl-date">Жовтень</div>
+              <div class="h-tl-title">🚪 День відкритих дверей</div>
+              <p class="h-tl-desc">Для абітурієнтів та батьків. Екскурсії, зустрічі з викладачами. Реєстрація на nemk.com.ua.</p>
+            </div>
+            <div class="h-tl-item">
+              <div class="h-tl-dot" style="background:#3b82f6;"></div>
+              <div class="h-tl-date">17 листопада</div>
+              <div class="h-tl-title">🎓 День студента</div>
+              <p class="h-tl-desc">КВК, творчі конкурси, дискотека. Найбільше свято студентів!</p>
+            </div>
+            <div class="h-tl-item">
+              <div class="h-tl-dot" style="background:#60a5fa;"></div>
+              <div class="h-tl-date">Квітень</div>
+              <div class="h-tl-title">🔬 Науково-практична конференція</div>
+              <p class="h-tl-desc">Студентські дослідження, захист проектів, запрошені лектори з підприємств.</p>
+            </div>
+            <div class="h-tl-item">
+              <div class="h-tl-dot" style="background:#93c5fd;"></div>
+              <div class="h-tl-date">Червень</div>
+              <div class="h-tl-title">🎉 Випускний вечір</div>
+              <p class="h-tl-desc">Урочисте вручення дипломів, прощальний концерт та банкет.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     ВСТУП — 4 КРОКИ
+═══════════════════════════════════════════════════════ -->
+<section class="py-5" style="background:var(--bg3);">
+  <div class="container">
+    <div class="text-center mb-5 reveal">
+      <span class="h-label">📋 Абітурієнту</span>
+      <h2 class="h-h2 mt-2">Як вступити до НЕФК</h2>
+      <p class="h-lead">Без ЗНО / NMT, без вступних іспитів — тільки атестат. Чотири кроки до диплому.</p>
+    </div>
+
+    <div class="position-relative reveal">
+      <div class="h-steps-line"></div>
+      <div class="row g-4">
+        <div class="col-md-3 col-6">
+          <div class="h-step">
+            <div class="h-step-circle"><i class="bi bi-file-earmark-text-fill"></i></div>
+            <div class="h-step-n">Крок 1</div>
+            <div class="h-step-title">Документи</div>
+            <p class="h-step-text">Атестат · паспорт · фото 3×4 · медична довідка 086-У · ідентифікаційний код</p>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="h-step">
+            <div class="h-step-circle"><i class="bi bi-clipboard2-check-fill"></i></div>
+            <div class="h-step-n">Крок 2</div>
+            <div class="h-step-title">Конкурс</div>
+            <p class="h-step-text">Відбір за середнім балом атестата. Є місця держзамовлення — безкоштовно!</p>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="h-step">
+            <div class="h-step-circle"><i class="bi bi-pen-fill"></i></div>
+            <div class="h-step-n">Крок 3</div>
+            <div class="h-step-title">Договір</div>
+            <p class="h-step-text">Укладаємо договір. Денна та заочна форми. Соціальна підтримка студентів.</p>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="h-step">
+            <div class="h-step-circle"><i class="bi bi-mortarboard-fill"></i></div>
+            <div class="h-step-n">Крок 4</div>
+            <div class="h-step-title">Навчання</div>
+            <p class="h-step-text">2–3 роки навчання. Диплом молодшого бакалавра державного зразка.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mt-5 reveal">
+      <a href="https://nemk.com.ua" target="_blank" rel="noopener"
+         class="h-btn-blue" style="font-size:.95rem;">
+        <i class="bi bi-globe2"></i> Детальніше на nemk.com.ua
+      </a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     КОНТАКТИ + КАРТА
+═══════════════════════════════════════════════════════ -->
+<section class="py-5">
+  <div class="container">
+    <div class="text-center mb-5 reveal">
+      <span class="h-label">📞 Контакти</span>
+      <h2 class="h-h2 mt-2">Зв'яжіться з нами</h2>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-5 reveal">
+        <div class="gl-card p-4 h-100 d-flex flex-column">
+
+          <h5 class="fw-800 mb-4" style="color:var(--text);">
+            <i class="bi bi-building me-2" style="color:var(--p);"></i>НЕФК — Контакти
+          </h5>
+
+          <div class="h-cinfo">
+            <div class="h-cinfo-icon"><i class="bi bi-geo-alt-fill"></i></div>
+            <div>
+              <div class="h-cinfo-lbl">Адреса</div>
+              <div class="h-cinfo-val">вул. Шахтарська, 16<br>м. Нovovolynsk, Волинська обл., 45400</div>
+            </div>
+          </div>
+
+          <div class="h-cinfo">
+            <div class="h-cinfo-icon"><i class="bi bi-telephone-fill"></i></div>
+            <div>
+              <div class="h-cinfo-lbl">Телефон</div>
+              <div class="h-cinfo-val">
+                <a href="tel:+380336424901" style="color:var(--p);text-decoration:none;font-weight:600;">
+                  (03364) 2-49-01
+                </a>
+                <span style="color:var(--muted);font-size:.78rem;"> — приймальна</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="h-cinfo">
+            <div class="h-cinfo-icon"><i class="bi bi-envelope-fill"></i></div>
+            <div>
+              <div class="h-cinfo-lbl">Email</div>
+              <div class="h-cinfo-val">
+                <a href="mailto:nemk@nemk.com.ua" style="color:var(--p);text-decoration:none;">
+                  nemk@nemk.com.ua
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="h-cinfo">
+            <div class="h-cinfo-icon"><i class="bi bi-clock-fill"></i></div>
+            <div>
+              <div class="h-cinfo-lbl">Графік роботи</div>
+              <div class="h-cinfo-val">
+                Пн–Пт: 08:00 – 17:00<br>
+                <span style="font-size:.8rem;color:var(--muted);">Обід: 12:00–13:00 · Сб–Нд: вихідний</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="h-cinfo">
+            <div class="h-cinfo-icon"><i class="bi bi-globe2"></i></div>
+            <div>
+              <div class="h-cinfo-lbl">Офіційний сайт</div>
+              <div class="h-cinfo-val">
+                <a href="https://nemk.com.ua" target="_blank" rel="noopener"
+                   style="color:var(--p);text-decoration:none;font-weight:700;">nemk.com.ua</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Соцмережі -->
+          <div class="mt-auto pt-3" style="border-top:1px solid var(--divider);">
+            <div class="fw-700 mb-2 small" style="color:var(--text2);">
+              <i class="bi bi-share-fill me-1" style="color:var(--p);"></i>Соцмережі
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <a href="https://facebook.com/nemk.novovolynsk" target="_blank" rel="noopener"
+                 class="h-soc" style="--c:#1877f2;"><i class="bi bi-facebook"></i> Facebook</a>
+              <a href="https://instagram.com/nemk_novovolynsk" target="_blank" rel="noopener"
+                 class="h-soc" style="--c:#e1306c;"><i class="bi bi-instagram"></i> Instagram</a>
+              <a href="https://t.me/nemk_novovolynsk" target="_blank" rel="noopener"
+                 class="h-soc" style="--c:#229ed9;"><i class="bi bi-telegram"></i> Telegram</a>
+              <a href="https://youtube.com/@nemk_novovolynsk" target="_blank" rel="noopener"
+                 class="h-soc" style="--c:#ff0000;"><i class="bi bi-youtube"></i> YouTube</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map -->
+      <div class="col-lg-7 reveal">
+        <div class="gl-card overflow-hidden" style="padding:0;min-height:440px;">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2485.123!2d24.1642!3d50.7372!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47263b7d3e3a2a31%3A0x1b2e3f4a5c6d7e8f!2z0LLRg9C7LiDQqNCw0YXRgtCw0YDRgdGM0LrQsCwgMTYsINCd0L7QstC-0LLQvtC70LjQvdGB0YzQug!5e0!3m2!1suk!2sua!4v1700000000001!5m2!1suk!2sua"
+            width="100%" height="440"
+            style="border:none;display:block;"
+            allowfullscreen loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            title="НЕФК на Google Maps">
+          </iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     CTA — ТЕМНА СЕКЦІЯ
+═══════════════════════════════════════════════════════ -->
+<section class="h-cta">
+  <div class="container h-cta-content">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <span class="h-label" style="background:rgba(255,255,255,.1);color:#93c5fd;border-color:rgba(255,255,255,.2);">
+          🚀 Платформа
+        </span>
+        <h2 class="fw-900 mt-3 mb-3"
+            style="color:#fff;font-size:clamp(2rem,3.8vw,3rem);letter-spacing:-.5px;line-height:1.1;">
+          Стань частиною<br>
+          <span class="h-title-sub">НЕФК Суспільства</span>
+        </h2>
+        <p style="color:rgba(255,255,255,.58);font-size:.97rem;line-height:1.8;max-width:450px;margin-bottom:2rem;">
+          Спілкуйся з однокурсниками, ділись конспектами,
+          дізнавайся про події першим. Реєстрація безкоштовна.
+        </p>
+        <div class="d-flex gap-3 flex-wrap">
+          <a href="{% url 'register' %}" class="h-btn-blue">
+            <i class="bi bi-rocket-takeoff-fill"></i> Зареєструватись
+          </a>
+          <a href="{% url 'login' %}" class="h-btn-ghost">
+            <i class="bi bi-box-arrow-in-right"></i> Вже є акаунт
+          </a>
+        </div>
+      </div>
+
+      <div class="col-lg-6 d-none d-lg-block">
+        <div class="h-feat-grid">
+          <div class="h-feat-card">
+            <div class="h-feat-card-icon"><i class="bi bi-chat-dots-fill"></i></div>
+            <div class="h-feat-card-title">Живий чат</div>
+            <div class="h-feat-card-desc">WebSocket, групові чати, медіафайли</div>
+          </div>
+          <div class="h-feat-card">
+            <div class="h-feat-card-icon"><i class="bi bi-people-fill"></i></div>
+            <div class="h-feat-card-title">Друзі</div>
+            <div class="h-feat-card-desc">Знаходь однокурсників і викладачів</div>
+          </div>
+          <div class="h-feat-card">
+            <div class="h-feat-card-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+            <div class="h-feat-card-title">Групи</div>
+            <div class="h-feat-card-desc">За спеціальностями та інтересами</div>
+          </div>
+          <div class="h-feat-card">
+            <div class="h-feat-card-icon"><i class="bi bi-robot"></i></div>
+            <div class="h-feat-card-title">AI-Асистент</div>
+            <div class="h-feat-card-desc">Відповіді про НЕФК 24/7, жарти 😄</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     УЧАСНИКИ
+═══════════════════════════════════════════════════════ -->
+{% if popular_users %}
+<section class="py-5">
+  <div class="container">
+    <div class="text-center mb-4 reveal">
+      <span class="h-label">👥 Спільнота</span>
+      <h2 class="h-h2 mt-2">Вже в НЕФК Суспільстві</h2>
+    </div>
+    <div class="row g-3 justify-content-center reveal-stagger">
+      {% for u in popular_users %}
+      <div class="col-4 col-sm-3 col-md-2">
+        <a href="{% url 'login' %}" class="h-member-card text-decoration-none">
+          <img src="{{ u.get_avatar_url }}" class="rounded-circle"
+               style="width:52px;height:52px;object-fit:cover;border:2.5px solid var(--border);"
+               alt="{{ u.username }}">
+          <div class="h-member-name">{{ u.first_name|default:u.username }}</div>
+          <div class="h-member-user">@{{ u.username }}</div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endif %}{# /not authenticated #}
+{% endblock %}

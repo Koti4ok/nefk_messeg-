@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Вхід — НЕМК Суспільство{% endblock %}
+
+{% block content %}
+<div class="auth-bg">
+  <div style="width:100%;max-width:420px;padding:0 1rem;">
+
+    <!-- Logo / brand -->
+    <div class="text-center mb-4">
+      <div style="width:64px;height:64px;border-radius:20px;
+                  background:linear-gradient(135deg,var(--p),var(--accent));
+                  display:flex;align-items:center;justify-content:center;
+                  font-size:1.8rem;margin:0 auto 1rem;
+                  box-shadow:0 8px 28px rgba(99,102,241,.45);">
+        <i class="bi bi-people-fill" style="color:#fff;"></i>
+      </div>
+      <h2 class="fw-900" style="color:var(--text);letter-spacing:-.5px;">Вітаємо назад</h2>
+      <p style="color:var(--muted);font-size:.9rem;">Увійди в свій акаунт НЕМК</p>
+    </div>
+
+    <!-- Card -->
+    <div class="page-glass-card p-4">
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger py-2 small mb-3 rounded-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+        {{ form.non_field_errors|join:", " }}
+      </div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label for="{{ form.username.id_for_label }}" class="form-label">
+            <i class="bi bi-person me-1" style="color:var(--p);"></i>Логін
+          </label>
+          <input type="text" name="{{ form.username.html_name }}"
+                 id="{{ form.username.id_for_label }}"
+                 class="form-control{% if form.username.errors %} is-invalid{% endif %}"
+                 placeholder="Твій нікнейм"
+                 value="{{ form.username.value|default:'' }}"
+                 autocomplete="username" required>
+          {% if form.username.errors %}
+          <div class="text-danger small mt-1">{{ form.username.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-4">
+          <label for="{{ form.password.id_for_label }}" class="form-label">
+            <i class="bi bi-lock me-1" style="color:var(--p);"></i>Пароль
+          </label>
+          <input type="password" name="{{ form.password.html_name }}"
+                 id="{{ form.password.id_for_label }}"
+                 class="form-control{% if form.password.errors %} is-invalid{% endif %}"
+                 placeholder="••••••••"
+                 autocomplete="current-password" required>
+          {% if form.password.errors %}
+          <div class="text-danger small mt-1">{{ form.password.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-700" style="font-size:.97rem;">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Увійти
+        </button>
+      </form>
+
+      <div class="form-divider">або</div>
+
+      <p class="text-center mb-0 small" style="color:var(--muted);">
+        Ще немає акаунту?
+        <a href="{% url 'register' %}" class="fw-700" style="color:var(--p);text-decoration:none;">
+          Зареєструватись →
+        </a>
+      </p>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

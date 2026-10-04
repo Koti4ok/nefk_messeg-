@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Групи — НЕМК Суспільство{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h4>
+    <span class="page-header-icon"><i class="bi bi-grid-3x3-gap-fill"></i></span>
+    Групи та спільноти
+  </h4>
+  <a href="{% url 'create_group' %}" class="btn btn-primary btn-sm fw-700">
+    <i class="bi bi-plus-lg me-1"></i>Нова група
+  </a>
+</div>
+
+<!-- ── My groups ────────────────────────────────────────────── -->
+{% if my_groups %}
+<div class="mb-2 fw-800" style="color:var(--text);font-size:.9rem;">
+  <i class="bi bi-bookmark-fill me-1" style="color:var(--p);"></i>Мої групи
+</div>
+<div class="row g-3 mb-4">
+  {% for group in my_groups %}
+  <div class="col-md-4 col-sm-6">
+    <a href="{% url 'group_detail' group.pk %}" class="group-card h-100">
+      <img src="{{ group.get_avatar_url }}" class="group-card-cover" alt="{{ group.name }}">
+      <div class="group-card-body">
+        <div class="fw-800 mb-1" style="color:var(--text);">{{ group.name }}</div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span style="color:var(--muted);font-size:.8rem;">
+            <i class="bi bi-people me-1"></i>{{ group.member_count }} учасників
+          </span>
+          {% if group.is_private %}
+          <span class="glass-badge"><i class="bi bi-lock-fill me-1"></i>Приватна</span>
+          {% endif %}
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- ── All communities ──────────────────────────────────────── -->
+<div class="mb-3 fw-800" style="color:var(--text);font-size:.9rem;">
+  <i class="bi bi-globe2 me-1" style="color:var(--p);"></i>Всі спільноти
+</div>
+<div class="row g-3">
+  {% for group in all_groups %}
+  <div class="col-md-4 col-sm-6">
+    <a href="{% url 'group_detail' group.pk %}" class="group-card h-100">
+      <img src="{{ group.get_avatar_url }}" class="group-card-cover" alt="{{ group.name }}">
+      <div class="group-card-body">
+        <div class="fw-800 mb-1" style="color:var(--text);">{{ group.name }}</div>
+        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+          <span style="color:var(--muted);font-size:.8rem;">
+            <i class="bi bi-people me-1"></i>{{ group.member_count }} учасників
+          </span>
+          {% if group.is_private %}
+          <span class="glass-badge"><i class="bi bi-lock-fill me-1"></i>Приватна</span>
+          {% endif %}
+        </div>
+        {% if group.description %}
+        <p style="color:var(--muted);font-size:.8rem;margin:0;line-height:1.45;">
+          {{ group.description|truncatechars:65 }}
+        </p>
+        {% endif %}
+      </div>
+    </a>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="page-glass-card p-5 text-center">
+      <i class="bi bi-people" style="font-size:2.8rem;color:var(--muted);display:block;margin-bottom:.75rem;"></i>
+      <p style="color:var(--muted);margin:0;">Груп поки немає.</p>
+      <a href="{% url 'create_group' %}" class="btn btn-primary btn-sm fw-700 mt-3">
+        <i class="bi bi-plus-lg me-1"></i>Створити першу!
+      </a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}
