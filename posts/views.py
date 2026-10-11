@@ -34,18 +34,32 @@ def _create_notification(recipient, sender, notif_type, text, link=''):
 @login_required
 def feed_view(request):
     user = request.user
-    # Збираємо ID друзів та підписок
+
+    # TikTok-стиль: показуємо ВСІ пости від усіх юзерів (не тільки друзів)
+    # Але спочатку йдуть пости друзів/підписок, потім решта
     friend_ids = list(
         Friendship.get_friends(user).values_list('id', flat=True)
     )
     following_ids = list(
         user.following.values_list('following_id', flat=True)
     )
-    author_ids = set(friend_ids + following_ids + [user.id])
+    priority_ids = set(friend_ids + following_ids + [user.id])
 
+    # Всі пости — спочатку пріоритетні (друзі/підписки), потім решта
+    from django.db.models import Case, When, IntegerField
     posts = Post.objects.filter(
-        author_id__in=author_ids, group=None
-    ).select_related('author', 'original_post__author').prefetch_related('likes', 'comments').order_by('-created_at')
+        group=None
+    ).select_related(
+        'author', 'original_post__author'
+    ).prefetch_related(
+        'likes', 'comments'
+    ).annotate(
+        priority=Case(
+            When(author_id__in=priority_ids, then=0),
+            default=1,
+            output_field=IntegerField(),
+        )
+    ).order_by('priority', '-created_at')
 
     post_form = PostForm()
     comment_form = CommentForm()

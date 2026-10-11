@@ -43,7 +43,19 @@ def login_view(request):
             messages.error(request, 'Неправильний логін або пароль.')
     else:
         form = LoginForm()
-    return render(request, 'accounts/login.html', {'form': form})
+
+    # Список акаунтів для вибору на сторінці логіну
+    accounts_qs = User.objects.filter(is_active=True).order_by('-role', 'first_name')[:30]
+    accounts = []
+    for u in accounts_qs:
+        accounts.append({
+            'username': u.username,
+            'full_name': u.get_full_name() or u.username,
+            'avatar': u.get_avatar_url(),
+            'is_admin': u.is_admin_role(),
+        })
+
+    return render(request, 'accounts/login.html', {'form': form, 'accounts': accounts})
 
 
 @login_required
