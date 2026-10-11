@@ -9,4 +9,5 @@ urlpatterns = [
     path('profile/edit/', views.edit_profile_view, name='edit_profile'),
     path('profile/<str:username>/', views.profile_view, name='profile'),
     path('search/', views.search_users_view, name='search_users'),
+    path('api/search/', views.search_ajax_view, name='search_ajax'),
 ]

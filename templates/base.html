@@ -9,6 +9,38 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   {% load static %}
   <link href="{% static 'css/main.css' %}" rel="stylesheet">
+  <style>
+  /* ── Search dropdown styles ── */
+  .srch-section-label {
+    font-size: .7rem; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .06em;
+    padding: .5rem .75rem .2rem;
+  }
+  .srch-item {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .45rem .75rem; text-decoration: none;
+    border-radius: 8px; margin: 1px 4px;
+    transition: background .15s;
+  }
+  .srch-item:hover { background: var(--hover); }
+  .srch-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    object-fit: cover; flex-shrink: 0;
+  }
+  .srch-avatar-sm { width: 28px; height: 28px; }
+  .srch-info { overflow: hidden; }
+  .srch-name {
+    font-weight: 600; font-size: .84rem;
+    color: var(--text); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .srch-post-text { font-weight: 400; font-size: .8rem; }
+  .srch-sub { font-size: .73rem; color: var(--muted); }
+  .srch-empty {
+    padding: 1rem; text-align: center;
+    color: var(--muted); font-size: .85rem;
+  }
+  </style>
   {% block extra_css %}{% endblock %}
 </head>
 <body class="nemk-body">
@@ -45,20 +77,38 @@
     <!-- Collapsible -->
     <div class="collapse navbar-collapse" id="navbarMain">
 
-      <!-- Search -->
+      <!-- Search з live AJAX dropdown -->
       {% if user.is_authenticated %}
-      <form class="d-flex me-auto ms-3" action="{% url 'search_users' %}" method="get" role="search">
-        <div class="input-group input-group-sm" style="width:220px;">
-          <input class="form-control" style="border-radius:10px 0 0 10px;font-size:.85rem;"
-                 type="search" name="q"
-                 data-i18n-placeholder="nav.search"
-                 placeholder="🔍 Пошук..."
-                 value="{{ request.GET.q }}" aria-label="Пошук користувачів">
-          <button class="btn btn-primary btn-sm px-2" style="border-radius:0 10px 10px 0;" type="submit" aria-label="Знайти">
-            <i class="bi bi-search"></i>
-          </button>
+      <div class="d-flex me-auto ms-3 position-relative" id="search-wrapper" style="width:260px;">
+        <form class="w-100" action="{% url 'search_users' %}" method="get" role="search">
+          <div class="input-group input-group-sm">
+            <input class="form-control" style="border-radius:10px 0 0 10px;font-size:.85rem;"
+                   type="search" name="q" id="nav-search-input"
+                   data-i18n-placeholder="nav.search"
+                   placeholder="🔍 Пошук..."
+                   value="{{ request.GET.q }}"
+                   autocomplete="off" aria-label="Пошук">
+            <button class="btn btn-primary btn-sm px-2" style="border-radius:0 10px 10px 0;"
+                    type="submit" aria-label="Знайти">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+        </form>
+        <!-- Live dropdown -->
+        <div id="search-dropdown"
+             style="display:none;position:absolute;top:110%;left:0;width:360px;
+                    background:var(--card);border:1.5px solid var(--border);
+                    border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.18);
+                    z-index:9999;overflow:hidden;max-height:480px;overflow-y:auto;">
+          <div id="search-dropdown-body" class="p-1"></div>
+          <div style="border-top:1px solid var(--border);padding:.5rem;text-align:center;">
+            <a id="search-all-link" href="/search/"
+               style="font-size:.8rem;color:var(--p);font-weight:600;text-decoration:none;">
+              Показати всі результати →
+            </a>
+          </div>
         </div>
-      </form>
+      </div>
       {% endif %}
 
       <!-- Nav items -->
@@ -398,6 +448,7 @@
 <script src="{% static 'js/main.js' %}"></script>
 <script src="{% static 'js/translate.js' %}"></script>
 <script src="{% static 'js/effects.js' %}"></script>
+<script src="{% static 'js/search.js' %}"></script>
 {% block extra_js %}{% endblock %}
 
 </body>

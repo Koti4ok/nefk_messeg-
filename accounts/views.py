@@ -3,10 +3,12 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
+from django.http import JsonResponse
 
 from .models import User
 from .forms import RegisterForm, LoginForm, ProfileEditForm
 from posts.models import Post
+from groups.models import Group
 from friends.models import FriendRequest, Friendship, Follow
 from notifications.models import NotificationSettings
 
@@ -89,8 +91,6 @@ def edit_profile_view(request):
         form = ProfileEditForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             user = form.save(commit=False)
-            # Тільки адміністратори можуть міняти роль через адмін-панель,
-            # тут примусово залишаємо поточну роль (захист від підміни)
             if not request.user.is_superuser:
                 user.role = request.user.role
             user.save()
@@ -101,14 +101,150 @@ def edit_profile_view(request):
     return render(request, 'accounts/edit_profile.html', {'form': form})
 
 
+# ─── Fuzzy helpers ────────────────────────────────────────────────────────────
+
+def _fuzzy_tokens(query):
+    """
+    Генерує варіанти запиту враховуючи типові помилки в українській:
+    и/і, е/є, ї/і, г/ґ, ь на кінці + видалення одного символу.
+    """
+    raw = query.lower().strip()
+    replacements = [
+        ('і', 'и'), ('и', 'і'),
+        ('є', 'е'), ('е', 'є'),
+        ('ї', 'і'), ('і', 'ї'),
+        ('ґ', 'г'), ('г', 'ґ'),
+        ('ь', ''),
+    ]
+    variants = {raw}
+    for old, new in replacements:
+        variants.add(raw.replace(old, new))
+    # Видалення одного символу (помилки типу «Максим» → «Маским»)
+    if len(raw) > 3:
+        for i in range(len(raw)):
+            v = raw[:i] + raw[i + 1:]
+            if v:
+                variants.add(v)
+    return list(variants)
+
+
+def _build_user_q(variants):
+    q = Q()
+    for v in variants:
+        q |= (Q(username__icontains=v) | Q(first_name__icontains=v) |
+              Q(last_name__icontains=v) | Q(bio__icontains=v) | Q(location__icontains=v))
+    return q
+
+
+def _build_post_q(variants):
+    q = Q()
+    for v in variants:
+        q |= Q(content__icontains=v)
+    return q
+
+
+def _build_group_q(variants):
+    q = Q()
+    for v in variants:
+        q |= Q(name__icontains=v) | Q(description__icontains=v)
+    return q
+
+
+# ─── Сторінка пошуку ──────────────────────────────────────────────────────────
+
 @login_required
 def search_users_view(request):
     query = request.GET.get('q', '').strip()
-    users = []
+    tab   = request.GET.get('tab', 'users')
+    users, posts, groups = [], [], []
+
     if query:
-        users = User.objects.filter(
-            Q(username__icontains=query) |
-            Q(first_name__icontains=query) |
-            Q(last_name__icontains=query)
-        ).exclude(id=request.user.id)[:20]
-    return render(request, 'accounts/search.html', {'users': users, 'query': query})
+        variants = _fuzzy_tokens(query)
+
+        users = (User.objects
+                 .filter(_build_user_q(variants))
+                 .exclude(id=request.user.id)
+                 .distinct()[:20])
+
+        posts = (Post.objects
+                 .filter(_build_post_q(variants))
+                 .select_related('author', 'group')
+                 .order_by('-created_at')
+                 .distinct()[:20])
+
+        groups = (Group.objects
+                  .filter(_build_group_q(variants))
+                  .filter(is_private=False)
+                  .distinct()[:20])
+
+    return render(request, 'accounts/search.html', {
+        'query':        query,
+        'tab':          tab,
+        'users':        users,
+        'posts':        posts,
+        'groups':       groups,
+        'users_count':  len(users),
+        'posts_count':  len(posts),
+        'groups_count': len(groups),
+    })
+
+
+# ─── AJAX endpoint для live-dropdown ─────────────────────────────────────────
+
+@login_required
+def search_ajax_view(request):
+    """
+    Повертає JSON для live-dropdown в navbar.
+    GET /api/search/?q=...
+    """
+    query = request.GET.get('q', '').strip()
+    if len(query) < 2:
+        return JsonResponse({'users': [], 'posts': [], 'groups': [], 'query': query})
+
+    variants = _fuzzy_tokens(query)
+
+    # Юзери
+    users_qs = (User.objects
+                .filter(_build_user_q(variants))
+                .exclude(id=request.user.id)
+                .distinct()[:5])
+    users_data = [{
+        'username':  u.username,
+        'full_name': u.get_full_name() or u.username,
+        'avatar':    u.get_avatar_url(),
+        'url':       f'/profile/{u.username}/',
+    } for u in users_qs]
+
+    # Пости
+    posts_qs = (Post.objects
+                .filter(_build_post_q(variants))
+                .select_related('author')
+                .order_by('-created_at')
+                .distinct()[:5])
+    posts_data = [{
+        'id':            p.id,
+        'content':       p.content[:90] + ('…' if len(p.content) > 90 else ''),
+        'author':        p.author.get_full_name() or p.author.username,
+        'author_avatar': p.author.get_avatar_url(),
+        'url':           f'/posts/{p.id}/',
+    } for p in posts_qs]
+
+    # Групи
+    groups_qs = (Group.objects
+                 .filter(_build_group_q(variants))
+                 .filter(is_private=False)
+                 .distinct()[:5])
+    groups_data = [{
+        'id':      g.id,
+        'name':    g.name,
+        'avatar':  g.get_avatar_url(),
+        'members': g.member_count(),
+        'url':     f'/groups/{g.id}/',
+    } for g in groups_qs]
+
+    return JsonResponse({
+        'query':  query,
+        'users':  users_data,
+        'posts':  posts_data,
+        'groups': groups_data,
+    })
