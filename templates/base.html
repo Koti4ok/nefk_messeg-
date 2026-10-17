@@ -9,38 +9,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   {% load static %}
   <link href="{% static 'css/main.css' %}" rel="stylesheet">
-  <style>
-  /* ── Search dropdown styles ── */
-  .srch-section-label {
-    font-size: .7rem; font-weight: 700; color: var(--muted);
-    text-transform: uppercase; letter-spacing: .06em;
-    padding: .5rem .75rem .2rem;
-  }
-  .srch-item {
-    display: flex; align-items: center; gap: .6rem;
-    padding: .45rem .75rem; text-decoration: none;
-    border-radius: 8px; margin: 1px 4px;
-    transition: background .15s;
-  }
-  .srch-item:hover { background: var(--hover); }
-  .srch-avatar {
-    width: 34px; height: 34px; border-radius: 50%;
-    object-fit: cover; flex-shrink: 0;
-  }
-  .srch-avatar-sm { width: 28px; height: 28px; }
-  .srch-info { overflow: hidden; }
-  .srch-name {
-    font-weight: 600; font-size: .84rem;
-    color: var(--text); white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis;
-  }
-  .srch-post-text { font-weight: 400; font-size: .8rem; }
-  .srch-sub { font-size: .73rem; color: var(--muted); }
-  .srch-empty {
-    padding: 1rem; text-align: center;
-    color: var(--muted); font-size: .85rem;
-  }
-  </style>
   {% block extra_css %}{% endblock %}
 </head>
 <body class="nemk-body">
@@ -51,114 +19,91 @@
 
     <!-- Brand -->
     <a class="navbar-brand" href="{% url 'home' %}">
-      <div class="brand-logo"><i class="bi bi-mortarboard-fill"></i></div>
-      <span data-i18n="nav.brand">НЕФК <strong>Суспільство</strong></span>
+      <div class="brand-logo"><i class="bi bi-mortarboard-fill" style="font-size:.85rem;"></i></div>
+      <span class="fw-800">НЕФК <span style="color:var(--p);">Суспільство</span></span>
     </a>
 
-    <!-- Mobile: theme + lang + toggler -->
-    <div class="d-flex align-items-center gap-2 d-lg-none">
-      <!-- 🌐 Lang toggle mobile -->
-      <button id="lang-btn-mobile" onclick="toggleLang()"
-              class="lang-toggle-btn" aria-label="Switch language">
-        <span class="lang-btn-label">🇬🇧 EN</span>
+    <!-- Mobile right controls -->
+    <div class="d-flex align-items-center gap-1 d-lg-none">
+      <button class="lang-toggle-btn" onclick="toggleLang()" aria-label="Змінити мову">
+        <span class="lang-btn-flag">🇬🇧</span>
+        <span class="lang-btn-label">EN</span>
       </button>
-      <button class="theme-toggle" onclick="toggleTheme()" title="Змінити тему" aria-label="Змінити тему">
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Змінити тему">
         <span class="t-icon sun">☀️</span>
         <span class="t-icon moon">🌙</span>
       </button>
       <button class="navbar-toggler border-0 p-1" type="button"
-              data-bs-toggle="collapse" data-bs-target="#navbarMain"
-              aria-controls="navbarMain" aria-expanded="false" aria-label="Навігація"
-              style="color:var(--text);font-size:1.3rem;">
+              data-bs-toggle="collapse" data-bs-target="#navMain"
+              aria-controls="navMain" aria-expanded="false" aria-label="Меню"
+              style="color:var(--text2);font-size:1.2rem;">
         <i class="bi bi-list"></i>
       </button>
     </div>
 
     <!-- Collapsible -->
-    <div class="collapse navbar-collapse" id="navbarMain">
+    <div class="collapse navbar-collapse" id="navMain">
 
-      <!-- Search з live AJAX dropdown -->
+      <!-- Search -->
       {% if user.is_authenticated %}
-      <div class="d-flex me-auto ms-3 position-relative" id="search-wrapper" style="width:260px;">
-        <form class="w-100" action="{% url 'search_users' %}" method="get" role="search">
-          <div class="input-group input-group-sm">
-            <input class="form-control" style="border-radius:10px 0 0 10px;font-size:.85rem;"
-                   type="search" name="q" id="nav-search-input"
-                   data-i18n-placeholder="nav.search"
-                   placeholder="🔍 Пошук..."
-                   value="{{ request.GET.q }}"
-                   autocomplete="off" aria-label="Пошук">
-            <button class="btn btn-primary btn-sm px-2" style="border-radius:0 10px 10px 0;"
-                    type="submit" aria-label="Знайти">
-              <i class="bi bi-search"></i>
-            </button>
-          </div>
-        </form>
-        <!-- Live dropdown -->
-        <div id="search-dropdown"
-             style="display:none;position:absolute;top:110%;left:0;width:360px;
-                    background:var(--card);border:1.5px solid var(--border);
-                    border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.18);
-                    z-index:9999;overflow:hidden;max-height:480px;overflow-y:auto;">
-          <div id="search-dropdown-body" class="p-1"></div>
-          <div style="border-top:1px solid var(--border);padding:.5rem;text-align:center;">
-            <a id="search-all-link" href="/search/"
-               style="font-size:.8rem;color:var(--p);font-weight:600;text-decoration:none;">
-              Показати всі результати →
-            </a>
-          </div>
+      <form class="d-flex me-auto ms-3" action="{% url 'search_users' %}" method="get" role="search">
+        <div class="input-group input-group-sm" style="width:200px;">
+          <input class="form-control" style="border-radius:9px 0 0 9px !important;font-size:.83rem;"
+                 type="search" name="q" placeholder="Пошук..."
+                 value="{{ request.GET.q }}" aria-label="Пошук">
+          <button class="btn btn-primary btn-sm px-2" style="border-radius:0 9px 9px 0 !important;" type="submit" aria-label="Знайти">
+            <i class="bi bi-search" style="font-size:.75rem;"></i>
+          </button>
         </div>
-      </div>
+      </form>
       {% endif %}
 
-      <!-- Nav items -->
-      <ul class="navbar-nav align-items-center gap-1 ms-auto">
+      <!-- Nav links -->
+      <ul class="navbar-nav align-items-center gap-0 ms-auto">
 
         {% if user.is_authenticated %}
         <li class="nav-item">
           <a class="nav-link" href="{% url 'feed' %}">
-            <i class="bi bi-house-fill me-1"></i>
-            <span class="d-none d-xl-inline" data-i18n="nav.feed">Стрічка</span>
+            <i class="bi bi-house-fill"></i>
+            <span class="d-none d-xl-inline">Стрічка</span>
           </a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="{% url 'friends' %}">
-            <i class="bi bi-people-fill me-1"></i>
-            <span class="d-none d-xl-inline" data-i18n="nav.friends">Друзі</span>
+            <i class="bi bi-people-fill"></i>
+            <span class="d-none d-xl-inline">Друзі</span>
           </a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="{% url 'groups' %}">
-            <i class="bi bi-grid-3x3-gap-fill me-1"></i>
-            <span class="d-none d-xl-inline" data-i18n="nav.groups">Групи</span>
+            <i class="bi bi-grid-3x3-gap-fill"></i>
+            <span class="d-none d-xl-inline">Групи</span>
           </a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="{% url 'conversations' %}">
-            <i class="bi bi-chat-dots-fill me-1"></i>
-            <span class="d-none d-xl-inline" data-i18n="nav.chat">Чат</span>
+            <i class="bi bi-chat-dots-fill"></i>
+            <span class="d-none d-xl-inline">Чат</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link position-relative" href="{% url 'notifications' %}" id="notif-bell" aria-label="Сповіщення">
+          <a class="nav-link position-relative" href="{% url 'notifications' %}" aria-label="Сповіщення">
             <i class="bi bi-bell-fill"></i>
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
-                  id="notif-badge" aria-live="polite">0</span>
+                  id="notif-badge" aria-live="polite" style="font-size:.55rem;padding:.2rem .38rem;">0</span>
           </a>
         </li>
         {% endif %}
 
-        <!-- 🌐 Lang toggle desktop -->
-        <li class="nav-item d-none d-lg-block">
-          <button id="lang-btn-desktop" onclick="toggleLang()"
-                  class="lang-toggle-btn ms-1" aria-label="Switch language">
-            <span class="lang-btn-label">🇬🇧 EN</span>
+        <!-- Desktop: lang + theme -->
+        <li class="nav-item d-none d-lg-flex align-items-center ms-1">
+          <button class="lang-toggle-btn" onclick="toggleLang()" aria-label="Змінити мову">
+            <span class="lang-btn-flag">🇬🇧</span>
+            <span class="lang-btn-label">EN</span>
           </button>
         </li>
-
-        <!-- Theme toggle desktop -->
-        <li class="nav-item d-none d-lg-block">
-          <button class="theme-toggle ms-1" onclick="toggleTheme()" title="Змінити тему" aria-label="Змінити тему">
+        <li class="nav-item d-none d-lg-flex align-items-center ms-1">
+          <button class="theme-toggle" onclick="toggleTheme()" aria-label="Змінити тему">
             <span class="t-icon sun">☀️</span>
             <span class="t-icon moon">🌙</span>
           </button>
@@ -168,77 +113,73 @@
         <!-- User dropdown -->
         <li class="nav-item dropdown ms-1">
           <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 pe-0"
-             href="#" data-bs-toggle="dropdown" aria-expanded="false">
+             href="#" data-bs-toggle="dropdown" aria-expanded="false" style="padding:.3rem .5rem !important;">
             <img src="{{ user.get_avatar_url }}" class="rounded-circle"
-                 style="object-fit:cover;border:2px solid var(--border);"
-                 width="32" height="32" alt="{{ user.username }}">
-            <span class="d-none d-lg-inline fw-600 small">{{ user.first_name|default:user.username }}</span>
+                 style="object-fit:cover;border:1.5px solid var(--divider);"
+                 width="30" height="30" alt="{{ user.username }}">
+            <span class="d-none d-lg-inline fw-600" style="font-size:.84rem;">
+              {{ user.first_name|default:user.username }}
+            </span>
           </a>
           <ul class="dropdown-menu dropdown-menu-end mt-1">
             <li class="px-3 py-2" style="border-bottom:1px solid var(--divider);">
-              <div class="fw-bold small">{{ user.get_full_name|default:user.username }}</div>
-              <div class="small" style="color:var(--muted);">@{{ user.username }}</div>
+              <div class="fw-700 small">{{ user.get_full_name|default:user.username }}</div>
+              <div style="font-size:.75rem;color:var(--muted);">@{{ user.username }}</div>
             </li>
             <li>
-              <a class="dropdown-item py-2" href="{% url 'profile' user.username %}">
-                <i class="bi bi-person-circle me-2" style="color:var(--primary);"></i>
-                <span data-i18n="nav.profile">Мій профіль</span>
+              <a class="dropdown-item" href="{% url 'profile' user.username %}">
+                <i class="bi bi-person me-2 small" style="color:var(--p);"></i>Мій профіль
               </a>
             </li>
             <li>
-              <a class="dropdown-item py-2" href="{% url 'edit_profile' %}">
-                <i class="bi bi-pencil-square me-2" style="color:var(--primary);"></i>
-                <span data-i18n="nav.edit">Редагувати</span>
+              <a class="dropdown-item" href="{% url 'edit_profile' %}">
+                <i class="bi bi-pencil me-2 small" style="color:var(--p);"></i>Редагувати
               </a>
             </li>
             <li>
-              <a class="dropdown-item py-2" href="{% url 'notification_settings' %}">
-                <i class="bi bi-gear me-2" style="color:var(--primary);"></i>
-                <span data-i18n="nav.settings">Налаштування</span>
+              <a class="dropdown-item" href="{% url 'notification_settings' %}">
+                <i class="bi bi-bell me-2 small" style="color:var(--p);"></i>Сповіщення
               </a>
             </li>
             {% if user.is_admin_role %}
             <li><hr class="dropdown-divider my-1"></li>
             <li>
-              <a class="dropdown-item py-2" style="color:var(--danger);" href="{% url 'admin:index' %}">
-                <i class="bi bi-shield-fill-check me-2"></i>
-                <span data-i18n="nav.admin">Адмін-панель</span>
+              <a class="dropdown-item" href="{% url 'admin:index' %}" style="color:var(--red);">
+                <i class="bi bi-shield-check me-2 small"></i>Адмін-панель
               </a>
             </li>
             <li>
-              <a class="dropdown-item py-2" style="color:#fbbf24;" href="{% url 'security_dashboard' %}">
-                <i class="bi bi-shield-shaded me-2"></i>
-                🛡️ Security Dashboard
+              <a class="dropdown-item" href="{% url 'security_dashboard' %}" style="color:var(--yellow);">
+                <i class="bi bi-shield-shaded me-2 small"></i>Security
               </a>
             </li>
             {% endif %}
             <li><hr class="dropdown-divider my-1"></li>
             <li>
-              <a class="dropdown-item py-2" style="color:var(--danger);" href="{% url 'logout' %}">
-                <i class="bi bi-box-arrow-right me-2"></i>
-                <span data-i18n="nav.logout">Вийти</span>
+              <a class="dropdown-item" href="{% url 'logout' %}" style="color:var(--red);">
+                <i class="bi bi-box-arrow-right me-2 small"></i>Вийти
               </a>
             </li>
           </ul>
         </li>
 
         {% else %}
-        <li>
-          <a class="btn btn-sm px-3 py-2 fw-600 ms-1"
-             style="background:var(--hover-bg);color:var(--text);border-radius:10px;border:1px solid var(--border);"
-             href="{% url 'login' %}" data-i18n="nav.login">Увійти</a>
+        <li class="ms-1">
+          <a class="btn btn-sm fw-600"
+             style="background:var(--hover-bg);color:var(--text2);border-radius:9px;border:1px solid var(--divider);font-size:.83rem;padding:.3rem .75rem;"
+             href="{% url 'login' %}">Увійти</a>
         </li>
-        <li>
-          <a class="btn btn-primary btn-sm px-3 py-2 fw-700 ms-1" href="{% url 'register' %}">
-            <i class="bi bi-person-plus me-1"></i>
-            <span data-i18n="nav.register">Приєднатись</span>
+        <li class="ms-1">
+          <a class="btn btn-primary btn-sm fw-700" style="border-radius:9px;font-size:.83rem;padding:.3rem .85rem;" href="{% url 'register' %}">
+            Приєднатись
           </a>
         </li>
         {% endif %}
 
       </ul>
-    </div><!-- /.collapse -->
-  </div><!-- /.container -->
+    </div>
+
+  </div>
 </nav>
 
 <!-- ══ FLASH MESSAGES ══════════════════════════════════════════ -->
@@ -246,7 +187,7 @@
 <div class="container mt-2 px-3" id="flash-container">
   {% for message in messages %}
   <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show py-2 small fw-500"
-       role="alert" style="animation:popIn .3s ease both;border-radius:14px;">
+       role="alert" style="animation:popIn .25s ease both;border-radius:12px;">
     {{ message }}
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрити"></button>
   </div>
@@ -264,30 +205,31 @@
   <div class="container">
     <div class="row g-4 pb-4">
 
-      <!-- About -->
       <div class="col-lg-4">
         <div class="footer-brand mb-2">
-          <i class="bi bi-people-fill me-2" style="color:#60a5fa;"></i>НЕФК Суспільство
+          <i class="bi bi-mortarboard-fill me-2" style="color:#60a5fa;"></i>НЕФК Суспільство
         </div>
-        <p style="color:rgba(255,255,255,.5);font-size:.88rem;line-height:1.7;">
-          Офіційна соціальна мережа студентів і викладачів Ніжинського електромеханічного фахового коледжу.
+        <p style="color:rgba(255,255,255,.45);font-size:.85rem;line-height:1.65;margin-bottom:.85rem;">
+          Офіційна соціальна мережа студентів і викладачів Нowowolynsk Electromechanical Vocational College.
         </p>
         <a href="https://nemk.com.ua/" target="_blank" rel="noopener noreferrer"
-           class="btn btn-sm mt-1"
-           style="background:rgba(59,130,246,.15);color:rgba(255,255,255,.8);border-radius:8px;border:1px solid rgba(59,130,246,.3);">
-          <i class="bi bi-globe2 me-1"></i>nemk.com.ua
+           style="display:inline-flex;align-items:center;gap:.35rem;
+                  background:rgba(59,130,246,.12);color:rgba(255,255,255,.7);
+                  border-radius:8px;border:1px solid rgba(59,130,246,.2);
+                  padding:.3rem .75rem;font-size:.8rem;text-decoration:none;
+                  transition:background .15s,color .15s;">
+          <i class="bi bi-globe2"></i>nemk.com.ua
         </a>
       </div>
 
-      <!-- Menu -->
       <div class="col-6 col-lg-2">
-        <h6 class="fw-700 text-white mb-3" style="font-size:.9rem;">Меню</h6>
-        <ul class="list-unstyled" style="font-size:.87rem;">
-          <li class="mb-2"><a href="{% url 'home' %}"><i class="bi bi-house me-1"></i>Головна</a></li>
+        <div class="fw-700 text-white mb-3" style="font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;opacity:.6;">Меню</div>
+        <ul class="list-unstyled" style="font-size:.84rem;">
+          <li class="mb-2"><a href="{% url 'home' %}">Головна</a></li>
           {% if user.is_authenticated %}
-          <li class="mb-2"><a href="{% url 'feed' %}"><i class="bi bi-rss me-1"></i>Стрічка</a></li>
-          <li class="mb-2"><a href="{% url 'groups' %}"><i class="bi bi-people me-1"></i>Групи</a></li>
-          <li class="mb-2"><a href="{% url 'conversations' %}"><i class="bi bi-chat me-1"></i>Чат</a></li>
+          <li class="mb-2"><a href="{% url 'feed' %}">Стрічка</a></li>
+          <li class="mb-2"><a href="{% url 'groups' %}">Групи</a></li>
+          <li class="mb-2"><a href="{% url 'conversations' %}">Чат</a></li>
           {% else %}
           <li class="mb-2"><a href="{% url 'register' %}">Реєстрація</a></li>
           <li class="mb-2"><a href="{% url 'login' %}">Вхід</a></li>
@@ -295,48 +237,44 @@
         </ul>
       </div>
 
-      <!-- Contacts -->
       <div class="col-6 col-lg-3">
-        <h6 class="fw-700 text-white mb-3" style="font-size:.9rem;">Контакти</h6>
-        <ul class="list-unstyled" style="font-size:.87rem;">
-          <li class="mb-2"><i class="bi bi-geo-alt me-2" style="color:#60a5fa;"></i>вул. Шахтарська, 16, Нововолинськ</li>
-          <li class="mb-2"><i class="bi bi-telephone me-2" style="color:#60a5fa;"></i>(03364) 2-49-01</li>
-          <li class="mb-2"><i class="bi bi-envelope me-2" style="color:#60a5fa;"></i>nemk@nemk.com.ua</li>
-          <li class="mb-2"><i class="bi bi-clock me-2" style="color:#60a5fa;"></i>Пн–Пт: 08:00–17:00</li>
+        <div class="fw-700 text-white mb-3" style="font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;opacity:.6;">Контакти</div>
+        <ul class="list-unstyled" style="font-size:.84rem;">
+          <li class="mb-2" style="display:flex;align-items:flex-start;gap:.5rem;">
+            <i class="bi bi-geo-alt" style="color:#60a5fa;margin-top:.1rem;flex-shrink:0;"></i>
+            вул. Шахтарська, 16, Нававолинськ
+          </li>
+          <li class="mb-2" style="display:flex;align-items:center;gap:.5rem;">
+            <i class="bi bi-telephone" style="color:#60a5fa;flex-shrink:0;"></i>
+            (03364) 2-49-01
+          </li>
+          <li class="mb-2" style="display:flex;align-items:center;gap:.5rem;">
+            <i class="bi bi-envelope" style="color:#60a5fa;flex-shrink:0;"></i>
+            nemk@nemk.com.ua
+          </li>
+          <li style="display:flex;align-items:center;gap:.5rem;">
+            <i class="bi bi-clock" style="color:#60a5fa;flex-shrink:0;"></i>
+            Пн–Пт: 08:00–17:00
+          </li>
         </ul>
       </div>
 
-      <!-- Соцмережі + тема -->
       <div class="col-lg-3">
-        <h6 class="fw-700 text-white mb-3" style="font-size:.9rem;">Соцмережі</h6>
+        <div class="fw-700 text-white mb-3" style="font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;opacity:.6;">Соцмережі</div>
         <div class="d-flex gap-2 flex-wrap mb-4">
-          <a href="https://www.facebook.com/nemk.novovolynsk" target="_blank" rel="noopener"
-             class="footer-social-btn" title="Facebook">
-            <i class="bi bi-facebook"></i>
-          </a>
-          <a href="https://instagram.com/nemk_novovolynsk" target="_blank" rel="noopener"
-             class="footer-social-btn" title="Instagram">
-            <i class="bi bi-instagram"></i>
-          </a>
-          <a href="https://t.me/nemk_novovolynsk" target="_blank" rel="noopener"
-             class="footer-social-btn" title="Telegram">
-            <i class="bi bi-telegram"></i>
-          </a>
-          <a href="https://www.youtube.com/@nemk_novovolynsk" target="_blank" rel="noopener"
-             class="footer-social-btn" title="YouTube">
-            <i class="bi bi-youtube"></i>
-          </a>
+          <a href="https://www.facebook.com/nemk.novovolynsk" target="_blank" rel="noopener" class="footer-social-btn" title="Facebook"><i class="bi bi-facebook"></i></a>
+          <a href="https://instagram.com/nemk_novovolynsk"    target="_blank" rel="noopener" class="footer-social-btn" title="Instagram"><i class="bi bi-instagram"></i></a>
+          <a href="https://t.me/nemk_novovolynsk"              target="_blank" rel="noopener" class="footer-social-btn" title="Telegram"><i class="bi bi-telegram"></i></a>
+          <a href="https://youtube.com/@nemk_novovolynsk"      target="_blank" rel="noopener" class="footer-social-btn" title="YouTube"><i class="bi bi-youtube"></i></a>
         </div>
-        <h6 class="fw-700 text-white mb-2" style="font-size:.9rem;">Тема</h6>
+        <div class="fw-700 text-white mb-2" style="font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;opacity:.6;">Тема</div>
         <div class="d-flex gap-2">
           <button onclick="setTheme('light')" id="btn-light-theme"
-                  class="btn btn-sm"
-                  style="background:rgba(255,255,255,.12);color:#fff;border-radius:8px;border:1px solid rgba(255,255,255,.18);">
+                  style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.75);border-radius:7px;border:1px solid rgba(255,255,255,.15);padding:.28rem .7rem;font-size:.78rem;font-weight:600;cursor:pointer;">
             ☀️ Світла
           </button>
           <button onclick="setTheme('dark')" id="btn-dark-theme"
-                  class="btn btn-sm"
-                  style="background:rgba(59,130,246,.12);color:rgba(255,255,255,.65);border-radius:8px;border:1px solid rgba(59,130,246,.2);">
+                  style="background:rgba(59,130,246,.1);color:rgba(255,255,255,.6);border-radius:7px;border:1px solid rgba(59,130,246,.18);padding:.28rem .7rem;font-size:.78rem;font-weight:600;cursor:pointer;">
             🌙 Темна
           </button>
         </div>
@@ -345,98 +283,82 @@
     </div>
     <hr class="footer-divider">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2"
-         style="font-size:.78rem;color:rgba(255,255,255,.3);">
+         style="font-size:.76rem;color:rgba(255,255,255,.28);">
       <span>© 2024 НЕФК Суспільство. Всі права захищено.</span>
-      <a href="https://nemk.com.ua/" target="_blank" rel="noopener noreferrer"
-         style="color:rgba(255,255,255,.35);">nemk.com.ua</a>
+      <a href="https://nemk.com.ua/" target="_blank" rel="noopener noreferrer">nemk.com.ua</a>
     </div>
   </div>
 </footer>
 
 <!-- ══ AI CHATBOT FAB ══════════════════════════════════════════ -->
-<button id="ai-chat-fab" onclick="toggleAiChat()"
-        title="НЕФК Асистент" aria-label="Відкрити AI асистента">
-  <span class="fab-label">НЕФК Асистент 🤖</span>
-  <span id="fab-icon">🤖</span>
+<button id="ai-chat-fab" onclick="toggleAiChat()" aria-label="НЕФК Асистент">
+  <span id="fab-icon">
+    <i class="bi bi-robot" style="font-size:1.1rem;"></i>
+  </span>
 </button>
 
-<!-- ══ AI CHAT WINDOW (redesigned) ════════════════════════════ -->
+<!-- ══ AI CHAT WINDOW ════════════════════════════════════════== -->
 <div id="ai-chat-window" role="dialog" aria-label="НЕФК AI Асистент" aria-modal="true">
 
-  <!-- Header -->
   <div class="ai-chat-header">
     <div class="ai-avatar-wrap">
-      <div class="ai-avatar-inner">🤖</div>
+      <div class="ai-avatar-inner"><i class="bi bi-robot" style="font-size:.95rem;color:#fff;"></i></div>
       <span class="ai-online-ring"></span>
     </div>
     <div class="flex-grow-1">
-      <div class="fw-700" style="font-size:.9rem;color:#fff;letter-spacing:-.2px;">
-        НЕФК Асистент
-      </div>
-      <div style="font-size:.67rem;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:.3rem;">
-        <span style="width:6px;height:6px;border-radius:50%;background:#22c55e;
-                     box-shadow:0 0 6px #22c55e;display:inline-block;animation:pdot 2s ease infinite;"
-              aria-hidden="true"></span>
-        Онлайн 24/7 · Знає всі про НЕФК
+      <div class="fw-700" style="font-size:.88rem;color:#fff;">НЕФК Асистент</div>
+      <div style="font-size:.65rem;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:.3rem;">
+        <span style="width:5px;height:5px;border-radius:50%;background:#22c55e;display:inline-block;" aria-hidden="true"></span>
+        Онлайн 24/7
       </div>
     </div>
-    <!-- Мінімізувати / закрити -->
-    <div class="d-flex gap-1">
-      <button onclick="toggleAiChat()" aria-label="Закрити"
-              class="ai-ctrl-btn">✕</button>
-    </div>
+    <button onclick="toggleAiChat()" class="ai-ctrl-btn" aria-label="Закрити">
+      <i class="bi bi-x" style="font-size:.9rem;"></i>
+    </button>
   </div>
 
-  <!-- Messages -->
-  <div class="ai-chat-messages" id="ai-messages" aria-live="polite" aria-atomic="false">
+  <div class="ai-chat-messages" id="ai-messages" aria-live="polite">
     <div class="ai-msg bot">
       <div class="ai-msg-inner">
-        👋 Привіт! Я <strong>НЕФК-Асистент</strong>!<br>
-        Запитай мене про що завгодно, пов'язане з коледжем.<br>
-        Або напиши <code style="font-size:.78rem;background:rgba(37,99,235,.15);
-          padding:.1rem .3rem;border-radius:5px;">жарт</code> — розвеселю! 😄
+        👋 Привіт! Я <strong>НЕФК-Асистент</strong>.<br>
+        Запитай про адресу, спеціальності, вступ або напиши <code style="font-size:.75rem;background:var(--bg3);padding:.1rem .3rem;border-radius:4px;">жарт</code> 😄
       </div>
       <div class="ai-msg-time">щойно</div>
     </div>
   </div>
 
-  <!-- Quick suggestions — 2 ряди -->
   <div class="ai-suggestions-wrap" aria-label="Швидкі запитання">
     <div class="ai-sugg-row">
       <button class="ai-sq" onclick="askBot('Де знаходиться коледж?')">📍 Адреса</button>
-      <button class="ai-sq" onclick="askBot('Які спеціальності є в НЕФК?')">🎓 Спеціальності</button>
-      <button class="ai-sq" onclick="askBot('Як вступити до НЕФК?')">📋 Вступ</button>
+      <button class="ai-sq" onclick="askBot('Які спеціальності є?')">🎓 Спеціальності</button>
+      <button class="ai-sq" onclick="askBot('Як вступити?')">📋 Вступ</button>
       <button class="ai-sq" onclick="askBot('Розклад пар')">📅 Розклад</button>
     </div>
     <div class="ai-sugg-row">
       <button class="ai-sq" onclick="askBot('Є гуртожиток?')">🏠 Гуртожиток</button>
-      <button class="ai-sq" onclick="askBot('Стипендія в НЕФК')">💰 Стипендія</button>
+      <button class="ai-sq" onclick="askBot('Стипендія')">💰 Стипендія</button>
       <button class="ai-sq" onclick="askBot('Розкажи жарт')">😄 Жарт</button>
-      <button class="ai-sq" onclick="askBot('Надихни мене вчитись')">💪 Мотивація</button>
+      <button class="ai-sq" onclick="askBot('Надихни мене')">💪 Мотивація</button>
     </div>
     <div class="ai-sugg-row">
-      <button class="ai-sq" onclick="askBot('Спорт та секції в коледжі')">⚽ Спорт</button>
+      <button class="ai-sq" onclick="askBot('Спорт в коледжі')">⚽ Спорт</button>
       <button class="ai-sq" onclick="askBot('Яку спеціальність обрати?')">🤔 Яку обрати?</button>
-      <button class="ai-sq" onclick="askBot('Бібліотека НЕФК')">📚 Бібліотека</button>
-      <button class="ai-sq" onclick="askBot('Заходи та події в коледжі')">🎭 Події</button>
+      <button class="ai-sq" onclick="askBot('Бібліотека')">📚 Бібліотека</button>
+      <button class="ai-sq" onclick="askBot('Заходи та події')">🎭 Події</button>
     </div>
   </div>
 
-  <!-- Input -->
   <div class="ai-chat-input-area">
     <input type="text" id="ai-input"
            placeholder="Запитай що завгодно..."
            onkeydown="if(event.key==='Enter')sendAiMsg()"
-           aria-label="Запитання до НЕФК-Асистента"
            autocomplete="off">
     <button class="ai-send-btn" onclick="sendAiMsg()" aria-label="Надіслати">
-      <i class="bi bi-send-fill"></i>
+      <i class="bi bi-send-fill" style="font-size:.8rem;"></i>
     </button>
   </div>
 
-  <!-- Footer hint -->
-  <div style="padding:.4rem .9rem .55rem;text-align:center;
-              font-size:.63rem;color:rgba(255,255,255,.2);">
+  <div style="padding:.3rem .85rem .4rem;text-align:center;font-size:.6rem;color:var(--muted);">
     НЕФК Суспільство · Rule-based AI
   </div>
 
@@ -448,7 +370,6 @@
 <script src="{% static 'js/main.js' %}"></script>
 <script src="{% static 'js/translate.js' %}"></script>
 <script src="{% static 'js/effects.js' %}"></script>
-<script src="{% static 'js/search.js' %}"></script>
 {% block extra_js %}{% endblock %}
 
 </body>

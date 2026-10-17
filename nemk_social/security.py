@@ -1,21 +1,6 @@
 """
-НЕФК — Anti-DDoS / Rate Limiting система v1
-============================================
-Захист від:
-  • Brute-force (багато запитів з одного IP)
-  • DDoS (flood запитів)
-  • Підозрілі User-Agent (боти, сканери)
-  • Path traversal атаки
-  • Repeated 404/error flooding
-
-Компоненти:
-  1. RateLimitMiddleware     — основний middleware
-  2. rate_limit decorator    — для окремих view
-  3. SecurityDashboardView   — адмін-моніторинг
-  4. BannedIP model          — постійний бан через БД
-  5. SecurityLog model       — журнал подій
+НЕФК — Anti-DDoS / Rate Limiting / Anti-VPN v2
 """
-
 import time
 import re
 import logging
@@ -24,482 +9,334 @@ from collections import defaultdict, deque
 from functools import wraps
 
 from django.core.cache import cache
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_http_methods
-from django.db import models
 
 logger = logging.getLogger('nemk_security')
 
-# ═══════════════════════════════════════════════════════════════
-# КОНФІГУРАЦІЯ
-# ═══════════════════════════════════════════════════════════════
-
+# ── Ліміти ────────────────────────────────────────────────────
 RATE_LIMIT_CONFIG = {
-    # Глобальний rate limit: max requests per window (seconds)
-    'global':          {'limit': 120, 'window': 60},    # 120 запитів / хв
-    'global_burst':    {'limit': 30,  'window': 5},     # не більше 30 за 5 сек
-
-    # Auth endpoints — жорсткіший ліміт
-    'auth':            {'limit': 10,  'window': 60},    # 10 спроб / хв
-    'auth_lockout':    {'limit': 20,  'window': 300},   # блок на 5 хв після 20 спроб
-
-    # API endpoints
-    'api':             {'limit': 60,  'window': 60},
-
-    # Admin
-    'admin':           {'limit': 30,  'window': 60},
-
-    # Auto-ban threshold: кількість попереджень до бану
-    'auto_ban_after':  5,
-    # Auto-ban тривалість (секунди)
-    'auto_ban_duration': 3600,   # 1 година
-    # Permanent ban після N тимчасових банів
-    'perm_ban_after':  3,
+    'global':          {'limit': 300, 'window': 60},  # 300 req/хв
+    'global_burst':    {'limit': 80,  'window': 5},   # 80 req/5сек
+    'auth':            {'limit': 20,  'window': 60},  # 20 спроб/хв на логін
+    'auto_ban_after':    15,    # 15 попереджень до бану
+    'auto_ban_duration': 300,   # 5 хвилин
+    'perm_ban_after':    20,    # постійний бан після 20 тимчасових
 }
 
-# Підозрілі User-Agent паттерни
-SUSPICIOUS_UA_PATTERNS = [
+# ── Підозрілі UA ──────────────────────────────────────────────
+SUSPICIOUS_UA_RE = [re.compile(p, re.IGNORECASE) for p in [
     r'sqlmap', r'nikto', r'nmap', r'masscan', r'hydra',
     r'metasploit', r'burpsuite', r'dirbuster', r'gobuster',
-    r'wfuzz', r'nuclei', r'acunetix', r'nessus', r'openvas',
-    r'python-requests/[01]', r'curl/[0-6]', r'wget/[01]',
-    r'zgrab', r'crawler', r'scrapy', r'bot(?!.*google|.*bing)',
-    r'<script', r'%3cscript', r'../../../',
-]
-SUSPICIOUS_UA_RE = [re.compile(p, re.IGNORECASE) for p in SUSPICIOUS_UA_PATTERNS]
+    r'wfuzz', r'nuclei', r'acunetix', r'nessus',
+    r'zgrab', r'scrapy',
+]]
 
-# Path patterns що вказують на атаку
-MALICIOUS_PATHS = [
-    r'\.\./', r'etc/passwd', r'etc/shadow', r'proc/self',
-    r'\.env$', r'\.git/', r'wp-admin', r'wp-login',
+# ── Шкідливі шляхи ────────────────────────────────────────────
+MALICIOUS_PATH_RE = [re.compile(p, re.IGNORECASE) for p in [
+    r'\.\./', r'etc/passwd', r'etc/shadow',
+    r'\.git/', r'wp-admin', r'wp-login',
     r'phpMyAdmin', r'phpmyadmin', r'adminer',
     r'eval\(', r'base64_decode', r'union.*select',
     r'<script>', r'javascript:', r'vbscript:',
-    r'\.php$', r'\.asp$', r'\.aspx$', r'\.jsp$',
+    r'\.php$', r'\.asp$', r'\.aspx$',
+]]
+
+# ── VPN/Proxy заголовки ────────────────────────────────────────
+PROXY_HEADERS = [
+    'HTTP_VIA', 'HTTP_PROXY_CONNECTION',
+    'HTTP_X_PROXY_ID', 'HTTP_X_BLUECOAT_VIA',
 ]
-MALICIOUS_PATH_RE = [re.compile(p, re.IGNORECASE) for p in MALICIOUS_PATHS]
 
-# Whitelist — ці IP ніколи не блокуються
-IP_WHITELIST = {'127.0.0.1', '::1', 'localhost'}
+# ── Whitelist (ніколи не блокуємо) ───────────────────────────
+IP_WHITELIST = {'127.0.0.1', '::1', 'localhost', '0.0.0.0', '::ffff:127.0.0.1'}
 
-# ═══════════════════════════════════════════════════════════════
-# IN-MEMORY STORAGE (thread-safe)
-# ═══════════════════════════════════════════════════════════════
-
-_lock = threading.Lock()
-
-# {ip: deque of timestamps}
-_request_log: dict = defaultdict(lambda: deque(maxlen=500))
-
-# {ip: {'count': int, 'first_seen': float, 'last_seen': float, 'warnings': int}}
-_ip_stats: dict = defaultdict(lambda: {
+# ── In-memory storage ─────────────────────────────────────────
+_lock   = threading.Lock()
+_reqs   = defaultdict(lambda: deque(maxlen=500))
+_stats_ip = defaultdict(lambda: {
     'count': 0, 'first_seen': time.time(), 'last_seen': time.time(),
     'warnings': 0, 'banned_count': 0,
 })
+_temp_bans = {}   # {ip: unban_ts}
+_perm_bans = {}   # {ip: reason}
+_events    = deque(maxlen=500)
 
-# {ip: unban_timestamp}  — тимчасові бани в пам'яті
-_temp_bans: dict = {}
-
-# {ip: reason}  — постійні бани в пам'яті (синхронізовані з cache)
-_perm_bans: dict = {}
-
-# Журнал подій: [{time, ip, event, detail}]
-_security_events: deque = deque(maxlen=1000)
-
-# Лічильники
 _stats = {
-    'total_requests': 0,
-    'blocked_requests': 0,
-    'temp_bans_issued': 0,
-    'perm_bans_issued': 0,
-    'suspicious_ua_blocked': 0,
-    'malicious_path_blocked': 0,
-    'started_at': time.time(),
+    'total_requests': 0, 'blocked_requests': 0,
+    'temp_bans_issued': 0, 'perm_bans_issued': 0,
+    'suspicious_ua_blocked': 0, 'malicious_path_blocked': 0,
+    'vpn_proxy_blocked': 0, 'started_at': time.time(),
 }
 
 
-def _get_client_ip(request) -> str:
-    """Витягує реальний IP клієнта (через proxy headers)."""
-    headers = [
-        'HTTP_X_FORWARDED_FOR',
-        'HTTP_X_REAL_IP',
-        'HTTP_CF_CONNECTING_IP',   # Cloudflare
-        'HTTP_X_CLUSTER_CLIENT_IP',
-        'HTTP_FORWARDED',
-        'REMOTE_ADDR',
-    ]
-    for h in headers:
+def _get_ip(request):
+    for h in ['HTTP_CF_CONNECTING_IP', 'HTTP_X_REAL_IP',
+              'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR']:
         ip = request.META.get(h, '').split(',')[0].strip()
         if ip and ip not in ('', 'unknown'):
             return ip
-    return request.META.get('REMOTE_ADDR', '0.0.0.0')
+    return '0.0.0.0'
 
 
-def _log_event(ip: str, event: str, detail: str = '', severity: str = 'WARNING'):
-    """Додає запис у журнал подій."""
-    entry = {
-        'time':     time.time(),
-        'time_fmt': timezone.now().strftime('%d.%m.%Y %H:%M:%S'),
-        'ip':       ip,
-        'event':    event,
-        'detail':   detail,
-        'severity': severity,
-    }
-    with _lock:
-        _security_events.appendleft(entry)
-    log_fn = getattr(logger, severity.lower(), logger.warning)
-    log_fn(f'[НЕФК-SEC] {event} | IP:{ip} | {detail}')
+def _log(ip, event, detail='', sev='WARNING'):
+    _events.appendleft({
+        'time': time.time(),
+        'time_fmt': timezone.now().strftime('%d.%m %H:%M:%S'),
+        'ip': ip, 'event': event, 'detail': detail, 'severity': sev,
+    })
+    getattr(logger, sev.lower(), logger.warning)(
+        f'[SEC] {event} | {ip} | {detail}'
+    )
 
 
-def _is_temp_banned(ip: str) -> bool:
-    """Перевіряє тимчасовий бан."""
-    unban_at = _temp_bans.get(ip)
-    if unban_at is None:
-        return False
-    if time.time() >= unban_at:
-        del _temp_bans[ip]
-        _log_event(ip, 'TEMP_BAN_EXPIRED', severity='INFO')
-        return False
+def _is_temp_banned(ip):
+    ts = _temp_bans.get(ip)
+    if ts is None: return False
+    if time.time() >= ts:
+        del _temp_bans[ip]; _log(ip, 'UNBAN_EXPIRED', sev='INFO'); return False
     return True
 
 
-def _is_perm_banned(ip: str) -> bool:
-    """Перевіряє постійний бан."""
-    if ip in _perm_bans:
-        return True
-    cached = cache.get(f'perm_ban_{ip}')
-    if cached:
-        _perm_bans[ip] = cached
-        return True
+def _is_perm_banned(ip):
+    if ip in _perm_bans: return True
+    c = cache.get(f'pban_{ip}')
+    if c: _perm_bans[ip] = c; return True
     return False
 
 
-def _issue_temp_ban(ip: str, reason: str, duration: int = None):
-    """Видає тимчасовий бан."""
-    dur = duration or RATE_LIMIT_CONFIG['auto_ban_duration']
-    _temp_bans[ip] = time.time() + dur
-    _ip_stats[ip]['banned_count'] += 1
+def _temp_ban(ip, reason, dur=None):
+    d = dur or RATE_LIMIT_CONFIG['auto_ban_duration']
+    _temp_bans[ip] = time.time() + d
+    _stats_ip[ip]['banned_count'] += 1
     _stats['temp_bans_issued'] += 1
-    _log_event(ip, 'TEMP_BAN_ISSUED', f'Reason:{reason} Duration:{dur}s', 'WARNING')
-
-    # Якщо перевищено ліміт тимчасових банів — постійний бан
-    if _ip_stats[ip]['banned_count'] >= RATE_LIMIT_CONFIG['perm_ban_after']:
-        _issue_perm_ban(ip, f'Too many temp bans: {reason}')
+    _log(ip, 'TEMP_BAN', f'{reason} {d}s')
+    if _stats_ip[ip]['banned_count'] >= RATE_LIMIT_CONFIG['perm_ban_after']:
+        _perm_ban(ip, f'Too many bans: {reason}')
 
 
-def _issue_perm_ban(ip: str, reason: str):
-    """Видає постійний бан."""
+def _perm_ban(ip, reason):
     _perm_bans[ip] = reason
-    cache.set(f'perm_ban_{ip}', reason, timeout=None)
+    cache.set(f'pban_{ip}', reason, timeout=None)
     _stats['perm_bans_issued'] += 1
-    _log_event(ip, 'PERM_BAN_ISSUED', f'Reason:{reason}', 'ERROR')
+    _log(ip, 'PERM_BAN', reason, 'ERROR')
 
 
-def _unban_ip(ip: str):
-    """Знімає всі бани з IP."""
-    _temp_bans.pop(ip, None)
-    _perm_bans.pop(ip, None)
-    cache.delete(f'perm_ban_{ip}')
-    if ip in _ip_stats:
-        _ip_stats[ip]['warnings'] = 0
-        _ip_stats[ip]['banned_count'] = 0
-    _log_event(ip, 'IP_UNBANNED', severity='INFO')
+def _unban_ip(ip):
+    _temp_bans.pop(ip, None); _perm_bans.pop(ip, None)
+    cache.delete(f'pban_{ip}')
+    if ip in _stats_ip:
+        _stats_ip[ip]['warnings'] = 0; _stats_ip[ip]['banned_count'] = 0
+    _log(ip, 'UNBANNED', sev='INFO')
 
 
-def _check_rate_limit(ip: str, path: str) -> tuple[bool, str]:
-    """
-    Перевіряє rate limit.
-    Повертає (is_blocked: bool, reason: str)
-    """
+def _check_rate(ip, path):
     now = time.time()
-    cfg_global = RATE_LIMIT_CONFIG['global']
-    cfg_burst  = RATE_LIMIT_CONFIG['global_burst']
-
+    cfg = RATE_LIMIT_CONFIG
     with _lock:
-        log = _request_log[ip]
-        log.append(now)
+        q = _reqs[ip]; q.append(now)
+        r60 = sum(1 for t in q if now-t < 60)
+        r5  = sum(1 for t in q if now-t < 5)
 
-        # Підраховуємо запити за різні вікна
-        reqs_1min  = sum(1 for t in log if now - t < cfg_global['window'])
-        reqs_5sec  = sum(1 for t in log if now - t < cfg_burst['window'])
+        # Auth
+        if any(path.startswith(p) for p in ['/login', '/register', '/api/']):
+            ra = sum(1 for t in q if now-t < 60)
+            if ra > cfg['auth']['limit']:
+                _stats_ip[ip]['warnings'] += 1
+                return True, f'Auth flood: {ra}/60s'
 
-        # Auth endpoints — жорсткіший контроль
-        is_auth = any(path.startswith(p) for p in ['/login', '/register', '/api/'])
-        if is_auth:
-            auth_cfg = RATE_LIMIT_CONFIG['auth']
-            reqs_auth = sum(1 for t in log if now - t < auth_cfg['window'])
-            if reqs_auth > auth_cfg['limit']:
-                _ip_stats[ip]['warnings'] += 1
-                return True, f'Auth rate limit: {reqs_auth} req/{auth_cfg["window"]}s'
+        if r5 > cfg['global_burst']['limit']:
+            _stats_ip[ip]['warnings'] += 1
+            if _stats_ip[ip]['warnings'] >= cfg['auto_ban_after']:
+                _temp_ban(ip, f'Burst {r5}/5s')
+            return True, f'Burst: {r5}/5s'
 
-        # Burst check (5 секунд)
-        if reqs_5sec > cfg_burst['limit']:
-            _ip_stats[ip]['warnings'] += 1
-            if _ip_stats[ip]['warnings'] >= RATE_LIMIT_CONFIG['auto_ban_after']:
-                _issue_temp_ban(ip, f'Burst flood: {reqs_5sec} req/5s')
-            return True, f'Burst limit: {reqs_5sec} req/5s'
-
-        # Global check (1 хвилина)
-        if reqs_1min > cfg_global['limit']:
-            _ip_stats[ip]['warnings'] += 1
-            if _ip_stats[ip]['warnings'] >= RATE_LIMIT_CONFIG['auto_ban_after']:
-                _issue_temp_ban(ip, f'Global flood: {reqs_1min} req/min')
-            return True, f'Rate limit: {reqs_1min} req/min'
-
+        if r60 > cfg['global']['limit']:
+            _stats_ip[ip]['warnings'] += 1
+            if _stats_ip[ip]['warnings'] >= cfg['auto_ban_after']:
+                _temp_ban(ip, f'Flood {r60}/min')
+            return True, f'Rate: {r60}/min'
     return False, ''
 
 
-def _check_user_agent(ua: str) -> tuple[bool, str]:
-    """Перевіряє User-Agent на підозрілі паттерни."""
-    if not ua:
-        return False, ''
-    for pattern in SUSPICIOUS_UA_RE:
-        if pattern.search(ua):
-            return True, f'Suspicious UA: {ua[:80]}'
+def _check_vpn(request, ip):
+    meta = request.META
+    for h in PROXY_HEADERS:
+        if meta.get(h):
+            return True, f'Proxy header: {h}'
+    xff = meta.get('HTTP_X_FORWARDED_FOR', '')
+    if xff and len(xff.split(',')) >= 3:
+        return True, f'Proxy chain: {xff[:50]}'
     return False, ''
 
 
-def _check_malicious_path(path: str) -> tuple[bool, str]:
-    """Перевіряє URL на ознаки атак."""
-    for pattern in MALICIOUS_PATH_RE:
-        if pattern.search(path):
-            return True, f'Malicious path: {path[:100]}'
+def _check_ua(ua):
+    if not ua: return False, ''
+    for p in SUSPICIOUS_UA_RE:
+        if p.search(ua): return True, f'Bad UA: {ua[:60]}'
     return False, ''
 
 
-def _blocked_response(request, reason: str, retry_after: int = 60) -> HttpResponse:
-    """Повертає відповідь 429/403 з красивою сторінкою."""
-    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-    if is_ajax:
-        return JsonResponse(
-            {'error': 'Too many requests', 'detail': reason, 'retry_after': retry_after},
-            status=429,
-        )
-    context = {
-        'reason':      reason,
-        'retry_after': retry_after,
-        'ip':          _get_client_ip(request),
-    }
-    return render(request, 'security/blocked.html', context, status=429)
+def _check_path(path):
+    for p in MALICIOUS_PATH_RE:
+        if p.search(path): return True, f'Bad path: {path[:60]}'
+    return False, ''
 
 
-# ═══════════════════════════════════════════════════════════════
-# MIDDLEWARE
-# ═══════════════════════════════════════════════════════════════
+def _block(request, reason, retry=300, btype='suspicious'):
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'error': 'Підозріла активність', 'retry_after': retry}, status=429)
+    return render(request, 'security/blocked.html', {
+        'reason': reason, 'retry_after': retry,
+        'ip': _get_ip(request), 'block_type': btype,
+    }, status=429)
 
+
+# ── Middleware ─────────────────────────────────────────────────
 class RateLimitMiddleware:
-    """
-    Головний anti-DDoS middleware.
-    Підключається у settings.py як перший у MIDDLEWARE.
-    """
-
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        ip   = _get_client_ip(request)
+        ip   = _get_ip(request)
         path = request.path
         ua   = request.META.get('HTTP_USER_AGENT', '')
 
         with _lock:
             _stats['total_requests'] += 1
-            _ip_stats[ip]['count']     += 1
-            _ip_stats[ip]['last_seen']  = time.time()
+            _stats_ip[ip]['count'] += 1
+            _stats_ip[ip]['last_seen'] = time.time()
 
-        # 1. Whitelist — пропускаємо без перевірок
+        # Whitelist — завжди пропускаємо
         if ip in IP_WHITELIST:
             return self.get_response(request)
 
-        # 2. Постійний бан
+        # Пerm ban
         if _is_perm_banned(ip):
             _stats['blocked_requests'] += 1
-            _log_event(ip, 'PERM_BANNED_REQUEST', path, 'ERROR')
-            return _blocked_response(request, 'Ваш IP заблокований назавжди. Зверніться до адміністратора.', 0)
+            return _block(request, 'Ваш IP заблокований. Зверніться до адміністратора.', 0, 'perm')
 
-        # 3. Тимчасовий бан
+        # Temp ban
         if _is_temp_banned(ip):
             _stats['blocked_requests'] += 1
             retry = max(0, int(_temp_bans.get(ip, 0) - time.time()))
-            _log_event(ip, 'TEMP_BANNED_REQUEST', path)
-            return _blocked_response(request, f'Тимчасово заблоковано. Спробуйте через {retry} сек.', retry)
+            return _block(request, 'Вибачте, підозріла активність.', retry, 'temp')
 
-        # 4. Перевірка підозрілого User-Agent
-        ua_blocked, ua_reason = _check_user_agent(ua)
-        if ua_blocked:
-            _stats['blocked_requests']        += 1
-            _stats['suspicious_ua_blocked']   += 1
-            _issue_temp_ban(ip, ua_reason, 1800)
-            _log_event(ip, 'SUSPICIOUS_UA', ua_reason, 'WARNING')
-            return _blocked_response(request, 'Підозрілий запит заблоковано.', 1800)
+        # Anti-VPN
+        vpn, vr = _check_vpn(request, ip)
+        if vpn:
+            _stats['blocked_requests'] += 1; _stats['vpn_proxy_blocked'] += 1
+            _temp_ban(ip, vr, 300); _log(ip, 'VPN', vr)
+            return _block(request, 'Вибачте, підозріла активність. Виявлено VPN/проксі.', 300, 'vpn')
 
-        # 5. Перевірка шкідливого шляху
-        path_blocked, path_reason = _check_malicious_path(path)
-        if path_blocked:
-            _stats['blocked_requests']         += 1
-            _stats['malicious_path_blocked']   += 1
-            _issue_temp_ban(ip, path_reason, 3600)
-            _log_event(ip, 'MALICIOUS_PATH', path_reason, 'ERROR')
-            return _blocked_response(request, 'Заборонений запит.', 3600)
+        # Bad UA
+        ua_bad, ur = _check_ua(ua)
+        if ua_bad:
+            _stats['blocked_requests'] += 1; _stats['suspicious_ua_blocked'] += 1
+            _temp_ban(ip, ur, 300); _log(ip, 'BAD_UA', ur)
+            return _block(request, 'Вибачте, підозріла активність.', 300, 'ua')
 
-        # 6. Rate limit
-        rl_blocked, rl_reason = _check_rate_limit(ip, path)
-        if rl_blocked:
+        # Bad path
+        p_bad, pr = _check_path(path)
+        if p_bad:
+            _stats['blocked_requests'] += 1; _stats['malicious_path_blocked'] += 1
+            _temp_ban(ip, pr, 300); _log(ip, 'BAD_PATH', pr, 'ERROR')
+            return _block(request, 'Вибачте, підозріла активність.', 300, 'path')
+
+        # Rate limit
+        rl, rr = _check_rate(ip, path)
+        if rl:
             _stats['blocked_requests'] += 1
-            _log_event(ip, 'RATE_LIMITED', rl_reason)
-            return _blocked_response(request, f'Забагато запитів. {rl_reason}', 60)
+            return _block(request, 'Вибачте, підозріла активність. Забагато запитів.', 60, 'rate')
 
-        # Все ок — пропускаємо
         response = self.get_response(request)
 
-        # Логуємо 404/500 flooding
+        # 404 flood
         if response.status_code == 404:
-            cache_key = f'404_{ip}'
-            cnt = cache.get(cache_key, 0) + 1
-            cache.set(cache_key, cnt, 300)
-            if cnt > 30:
-                _issue_temp_ban(ip, f'404 flooding: {cnt} times', 1800)
-                _log_event(ip, '404_FLOOD', f'{cnt} 404s in 5min')
+            k = f'404_{ip}'; cnt = cache.get(k, 0) + 1
+            cache.set(k, cnt, 300)
+            if cnt > 40:
+                _temp_ban(ip, f'404 flood {cnt}', 300)
 
         return response
 
 
-# ═══════════════════════════════════════════════════════════════
-# DECORATOR для окремих view
-# ═══════════════════════════════════════════════════════════════
-
-def rate_limit(limit: int = 30, window: int = 60, ban_on_exceed: bool = False):
-    """
-    Декоратор для обмеження запитів на конкретний view.
-
-    @rate_limit(limit=5, window=60)
-    def my_view(request): ...
-    """
-    def decorator(view_func):
-        @wraps(view_func)
-        def wrapper(request, *args, **kwargs):
-            ip = _get_client_ip(request)
-            if ip in IP_WHITELIST:
-                return view_func(request, *args, **kwargs)
-
-            cache_key = f'rl_{view_func.__name__}_{ip}'
-            now = time.time()
-
-            # Отримуємо список timestamps
-            timestamps = cache.get(cache_key, [])
-            timestamps = [t for t in timestamps if now - t < window]
-            timestamps.append(now)
-            cache.set(cache_key, timestamps, window + 5)
-
-            if len(timestamps) > limit:
-                if ban_on_exceed:
-                    _issue_temp_ban(ip, f'View rate limit: {view_func.__name__}')
-                _log_event(ip, 'VIEW_RATE_LIMIT', f'{view_func.__name__}: {len(timestamps)}/{limit}')
-                retry = window - int(now - timestamps[0])
-                return _blocked_response(request, f'Занадто багато запитів. Зачекайте {retry}с.', retry)
-
-            return view_func(request, *args, **kwargs)
-        return wrapper
-    return decorator
+# ── Decorator ─────────────────────────────────────────────────
+def rate_limit(limit=30, window=60, ban_on_exceed=False):
+    def dec(fn):
+        @wraps(fn)
+        def wrap(request, *args, **kwargs):
+            ip = _get_ip(request)
+            if ip in IP_WHITELIST: return fn(request, *args, **kwargs)
+            k = f'rl_{fn.__name__}_{ip}'; now = time.time()
+            ts = [t for t in cache.get(k, []) if now-t < window]
+            ts.append(now); cache.set(k, ts, window+5)
+            if len(ts) > limit:
+                if ban_on_exceed: _temp_ban(ip, f'RL:{fn.__name__}', 300)
+                return _block(request, 'Вибачте, підозріла активність.', window, 'rate')
+            return fn(request, *args, **kwargs)
+        return wrap
+    return dec
 
 
-# ═══════════════════════════════════════════════════════════════
-# SECURITY DASHBOARD VIEW
-# ═══════════════════════════════════════════════════════════════
-
+# ── Security dashboard ─────────────────────────────────────────
 @login_required
 def security_dashboard(request):
-    """Адмін-панель безпеки — тільки для superuser."""
     if not request.user.is_superuser:
         return redirect('feed')
 
-    # Дія: розбанити IP
     if request.method == 'POST':
-        action = request.POST.get('action')
-        target_ip = request.POST.get('ip', '').strip()
-
-        if action == 'unban' and target_ip:
-            _unban_ip(target_ip)
-        elif action == 'ban' and target_ip:
-            reason = request.POST.get('reason', 'Manual ban by admin')
-            _issue_perm_ban(target_ip, reason)
-        elif action == 'temp_ban' and target_ip:
-            dur = int(request.POST.get('duration', 3600))
-            reason = request.POST.get('reason', 'Manual temp ban by admin')
-            _issue_temp_ban(target_ip, reason, dur)
-        elif action == 'clear_logs':
-            with _lock:
-                _security_events.clear()
-
+        a  = request.POST.get('action')
+        ip = request.POST.get('ip', '').strip()
+        if a == 'unban' and ip:   _unban_ip(ip)
+        elif a == 'ban' and ip:   _perm_ban(ip, request.POST.get('reason','Manual'))
+        elif a == 'temp_ban' and ip:
+            _temp_ban(ip, request.POST.get('reason','Manual'), int(request.POST.get('duration',300)))
+        elif a == 'clear_logs':
+            with _lock: _events.clear()
         return redirect('security_dashboard')
 
-    # Топ IP за кількістю запитів
     now = time.time()
-    uptime_sec = now - _stats['started_at']
-    uptime_str = _fmt_uptime(uptime_sec)
-
-    top_ips = sorted(
-        _ip_stats.items(),
-        key=lambda x: x[1]['count'],
-        reverse=True
-    )[:20]
-
-    # Активні тимчасові бани
-    active_temp_bans = [
-        {
-            'ip': ip,
-            'expires': timezone.datetime.fromtimestamp(ts).strftime('%d.%m %H:%M:%S'),
-            'remaining': max(0, int(ts - now)),
-        }
-        for ip, ts in sorted(_temp_bans.items(), key=lambda x: x[1])
-        if ts > now
-    ]
-
-    context = {
-        'stats':            _stats.copy(),
-        'top_ips':          top_ips,
-        'events':           list(_security_events)[:100],
-        'temp_bans':        active_temp_bans,
-        'perm_bans':        list(_perm_bans.items()),
-        'uptime':           uptime_str,
-        'config':           RATE_LIMIT_CONFIG,
-        'total_tracked_ips':len(_ip_stats),
-        'block_rate':       round(
-            _stats['blocked_requests'] / max(_stats['total_requests'], 1) * 100, 1
-        ),
+    ctx = {
+        'stats':   _stats.copy(),
+        'top_ips': sorted(_stats_ip.items(), key=lambda x: x[1]['count'], reverse=True)[:20],
+        'events':  list(_events)[:100],
+        'temp_bans': [
+            {'ip':ip,'expires':timezone.datetime.fromtimestamp(ts).strftime('%d.%m %H:%M'),
+             'remaining':max(0,int(ts-now))}
+            for ip,ts in sorted(_temp_bans.items(),key=lambda x:x[1]) if ts>now
+        ],
+        'perm_bans': list(_perm_bans.items()),
+        'uptime':    _fmt(now - _stats['started_at']),
+        'config':    RATE_LIMIT_CONFIG,
+        'total_tracked_ips': len(_stats_ip),
+        'block_rate': round(_stats['blocked_requests']/max(_stats['total_requests'],1)*100,1),
     }
-    return render(request, 'security/dashboard.html', context)
+    return render(request, 'security/dashboard.html', ctx)
 
 
-def _fmt_uptime(sec: float) -> str:
-    sec = int(sec)
-    h, m, s = sec // 3600, (sec % 3600) // 60, sec % 60
-    return f'{h}г {m}хв {s}с'
+def _fmt(s):
+    s=int(s); return f'{s//3600}г {(s%3600)//60}хв {s%60}с'
 
-
-# ═══════════════════════════════════════════════════════════════
-# AJAX endpoint для real-time статистики
-# ═══════════════════════════════════════════════════════════════
 
 @login_required
 def security_stats_api(request):
-    """Повертає поточну статистику JSON для live-оновлення дашборду."""
     if not request.user.is_superuser:
-        return JsonResponse({'error': 'Forbidden'}, status=403)
-
-    now = time.time()
+        return JsonResponse({'error':'Forbidden'},status=403)
+    now=time.time()
     return JsonResponse({
         'total_requests':   _stats['total_requests'],
         'blocked_requests': _stats['blocked_requests'],
-        'block_rate':       round(_stats['blocked_requests'] / max(_stats['total_requests'], 1) * 100, 1),
-        'temp_bans':        len([ip for ip, ts in _temp_bans.items() if ts > now]),
-        'perm_bans':        len(_perm_bans),
+        'block_rate': round(_stats['blocked_requests']/max(_stats['total_requests'],1)*100,1),
+        'temp_bans':  len([ip for ip,ts in _temp_bans.items() if ts>now]),
+        'perm_bans':  len(_perm_bans),
         'temp_bans_issued': _stats['temp_bans_issued'],
         'perm_bans_issued': _stats['perm_bans_issued'],
         'suspicious_ua':    _stats['suspicious_ua_blocked'],
         'malicious_paths':  _stats['malicious_path_blocked'],
-        'recent_events':    list(_security_events)[:10],
-        'uptime':           _fmt_uptime(now - _stats['started_at']),
+        'vpn_proxy':        _stats['vpn_proxy_blocked'],
+        'recent_events':    list(_events)[:10],
+        'uptime':           _fmt(now-_stats['started_at']),
     })

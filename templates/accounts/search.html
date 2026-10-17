@@ -1,31 +1,16 @@
 {% extends 'base.html' %}
-{% load static %}
-{% block title %}Пошук: {{ query }} — НЕФК Суспільство{% endblock %}
-
-{% block extra_css %}
-<style>
-.search-tab-btn {
-  border: none; background: none; padding: .5rem 1.2rem;
-  border-radius: 10px; font-weight: 600; color: var(--muted); transition: .2s;
-  cursor: pointer;
-}
-.search-tab-btn.active { background: var(--p); color: #fff; }
-.search-tab-btn:hover:not(.active) { background: var(--hover); }
-.tab-pane { display: none; }
-.tab-pane.active { display: block; }
-.post-result-card { border-left: 3px solid var(--p); padding-left: .75rem; }
-</style>
-{% endblock %}
+{% block title %}Пошук: {{ query }} — НЕМК Суспільство{% endblock %}
 
 {% block content %}
+
 <div class="page-header">
   <h4>
     <span class="page-header-icon"><i class="bi bi-search"></i></span>
-    Пошук
+    Пошук людей
   </h4>
 </div>
 
-<!-- Пошуковий рядок -->
+<!-- Search bar -->
 <div class="page-glass-card p-3 mb-4">
   <form method="get" action="{% url 'search_users' %}" role="search">
     <div class="input-group">
@@ -34,189 +19,67 @@
                    border-right:none;border-radius:12px 0 0 12px;color:var(--muted);">
         <i class="bi bi-search"></i>
       </span>
-      <input type="search" name="q" id="search-page-input" value="{{ query }}"
+      <input type="search" name="q" value="{{ query }}"
              class="form-control"
              style="border-left:none;border-radius:0 12px 12px 0;"
-             placeholder="Шукай людей, пости, групи… помилки — не страшно 😉"
+             placeholder="Ім'я, нікнейм, місто…"
              autocomplete="off" autofocus>
-      <input type="hidden" name="tab" id="tab-hidden" value="{{ tab }}">
       <button type="submit" class="btn btn-primary ms-2 fw-700 px-4">Знайти</button>
     </div>
   </form>
 </div>
 
 {% if query %}
-<!-- Вкладки -->
-<div class="d-flex gap-2 mb-4 flex-wrap">
-  <button class="search-tab-btn {% if tab == 'users' %}active{% endif %}"
-          onclick="switchTab('users', this)">
-    <i class="bi bi-people me-1"></i>Люди
-    <span class="badge bg-secondary ms-1">{{ users_count }}</span>
-  </button>
-  <button class="search-tab-btn {% if tab == 'posts' %}active{% endif %}"
-          onclick="switchTab('posts', this)">
-    <i class="bi bi-file-text me-1"></i>Пости
-    <span class="badge bg-secondary ms-1">{{ posts_count }}</span>
-  </button>
-  <button class="search-tab-btn {% if tab == 'groups' %}active{% endif %}"
-          onclick="switchTab('groups', this)">
-    <i class="bi bi-grid-3x3-gap me-1"></i>Групи
-    <span class="badge bg-secondary ms-1">{{ groups_count }}</span>
-  </button>
-</div>
-
-<!-- Вкладка: Люди -->
-<div class="tab-pane {% if tab == 'users' %}active{% endif %}" id="tab-users">
-  <div class="row g-3">
-    {% for u in users %}
-    <div class="col-md-4 col-sm-6">
-      <div class="page-glass-card p-3 d-flex align-items-center gap-3"
-           style="transition:transform .2s,box-shadow .2s;"
-           onmouseover="this.style.transform='translateY(-3px)'"
-           onmouseout="this.style.transform=''">
-        <img src="{{ u.get_avatar_url }}" class="rounded-circle flex-shrink-0"
-             style="object-fit:cover;border:2px solid var(--border);"
-             width="58" height="58" alt="{{ u.username }}">
-        <div class="flex-grow-1 overflow-hidden">
-          <div class="fw-700" style="color:var(--text);">{{ u.get_full_name|default:u.username }}</div>
-          <div class="small" style="color:var(--muted);">@{{ u.username }}</div>
-          {% if u.location %}
-          <div class="small mt-1" style="color:var(--muted);">
-            <i class="bi bi-geo-alt me-1" style="color:var(--p);"></i>{{ u.location }}
-          </div>
-          {% endif %}
-          {% if u.bio %}
-          <div class="small mt-1"
-               style="color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-            {{ u.bio|truncatechars:60 }}
-          </div>
-          {% endif %}
-        </div>
-        <a href="{% url 'profile' u.username %}"
-           class="btn btn-outline-primary btn-sm fw-600 flex-shrink-0">
-          <i class="bi bi-person"></i>
-        </a>
-      </div>
-    </div>
-    {% empty %}
-    <div class="col-12">
-      <div class="page-glass-card p-5 text-center">
-        <i class="bi bi-person-x"
-           style="font-size:2.8rem;color:var(--muted);display:block;margin-bottom:.75rem;"></i>
-        <p style="color:var(--muted);margin:0;">
-          Нікого не знайдено за запитом <strong>«{{ query }}»</strong>
-        </p>
-        <p style="color:var(--muted);font-size:.85rem;margin-top:.4rem;">Спробуй інше написання</p>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-</div>
-
-<!-- Вкладка: Пости -->
-<div class="tab-pane {% if tab == 'posts' %}active{% endif %}" id="tab-posts">
-  <div class="d-flex flex-column gap-3">
-    {% for p in posts %}
-    <div class="page-glass-card p-3">
-      <div class="d-flex align-items-center gap-2 mb-2">
-        <img src="{{ p.author.get_avatar_url }}" class="rounded-circle" width="36" height="36"
-             style="object-fit:cover;flex-shrink:0;" alt="{{ p.author.username }}">
-        <div>
-          <div class="fw-700 small" style="color:var(--text);">
-            <a href="{% url 'profile' p.author.username %}"
-               style="color:inherit;text-decoration:none;">
-              {{ p.author.get_full_name|default:p.author.username }}
-            </a>
-          </div>
-          <div class="small" style="color:var(--muted);">{{ p.created_at|date:"d.m.Y H:i" }}</div>
-        </div>
-        <a href="/posts/{{ p.id }}/" class="btn btn-outline-primary btn-sm ms-auto">
-          <i class="bi bi-arrow-right me-1"></i>Переглянути
-        </a>
-      </div>
-      <p class="mb-0 post-result-card" style="color:var(--text);">
-        {{ p.content|truncatechars:250 }}
-      </p>
-      {% if p.group %}
-      <div class="small mt-2" style="color:var(--muted);">
-        <i class="bi bi-collection me-1" style="color:var(--p);"></i>{{ p.group.name }}
-      </div>
-      {% endif %}
-    </div>
-    {% empty %}
-    <div class="page-glass-card p-5 text-center">
-      <i class="bi bi-file-x"
-         style="font-size:2.8rem;color:var(--muted);display:block;margin-bottom:.75rem;"></i>
-      <p style="color:var(--muted);margin:0;">
-        Постів не знайдено за запитом <strong>«{{ query }}»</strong>
-      </p>
-    </div>
-    {% endfor %}
-  </div>
-</div>
-
-<!-- Вкладка: Групи -->
-<div class="tab-pane {% if tab == 'groups' %}active{% endif %}" id="tab-groups">
-  <div class="row g-3">
-    {% for g in groups %}
-    <div class="col-md-4 col-sm-6">
-      <div class="page-glass-card p-3 d-flex align-items-center gap-3"
-           style="transition:transform .2s;"
-           onmouseover="this.style.transform='translateY(-3px)'"
-           onmouseout="this.style.transform=''">
-        <img src="{{ g.get_avatar_url }}" class="rounded-circle flex-shrink-0"
-             style="object-fit:cover;border:2px solid var(--border);"
-             width="58" height="58" alt="{{ g.name }}">
-        <div class="flex-grow-1 overflow-hidden">
-          <div class="fw-700" style="color:var(--text);">{{ g.name }}</div>
-          <div class="small" style="color:var(--muted);">{{ g.member_count }} учасників</div>
-          {% if g.description %}
-          <div class="small mt-1" style="color:var(--muted);">{{ g.description|truncatechars:70 }}</div>
-          {% endif %}
-        </div>
-        <a href="/groups/{{ g.id }}/" class="btn btn-outline-primary btn-sm fw-600 flex-shrink-0">
-          <i class="bi bi-arrow-right"></i>
-        </a>
-      </div>
-    </div>
-    {% empty %}
-    <div class="col-12">
-      <div class="page-glass-card p-5 text-center">
-        <i class="bi bi-grid-fill"
-           style="font-size:2.8rem;color:var(--muted);display:block;margin-bottom:.75rem;"></i>
-        <p style="color:var(--muted);margin:0;">
-          Груп не знайдено за запитом <strong>«{{ query }}»</strong>
-        </p>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-</div>
-
-{% else %}
-<!-- Порожній стан -->
-<div class="page-glass-card p-5 text-center">
-  <i class="bi bi-search"
-     style="font-size:3rem;color:var(--muted);display:block;margin-bottom:1rem;"></i>
-  <p style="color:var(--muted);margin:0;font-size:1.1rem;">
-    Введи що шукаєш — люди, пости, групи
-  </p>
-  <p style="color:var(--muted);font-size:.85rem;margin-top:.5rem;">
-    Підтримує помилки у написанні 😉
-  </p>
-</div>
+<p style="color:var(--muted);font-size:.87rem;margin-bottom:1rem;">
+  За запитом <strong style="color:var(--text);">«{{ query }}»</strong>
+  знайдено {{ users|length }} користувач{{ users|length|pluralize:"а,ів" }}
+</p>
 {% endif %}
 
-{% endblock %}
+<div class="row g-3">
+  {% for u in users %}
+  <div class="col-md-4 col-sm-6">
+    <div class="page-glass-card p-3 d-flex align-items-center gap-3"
+         style="transition:transform .2s,box-shadow .2s;"
+         onmouseover="this.style.transform='translateY(-3px)'"
+         onmouseout="this.style.transform=''">
+      <img src="{{ u.get_avatar_url }}" class="rounded-circle flex-shrink-0"
+           style="object-fit:cover;border:2px solid var(--border);"
+           width="58" height="58" alt="{{ u.username }}">
+      <div class="flex-grow-1 overflow-hidden">
+        <div class="fw-700" style="color:var(--text);">
+          {{ u.get_full_name|default:u.username }}
+        </div>
+        <div class="small" style="color:var(--muted);">@{{ u.username }}</div>
+        {% if u.location %}
+        <div class="small mt-1" style="color:var(--muted);">
+          <i class="bi bi-geo-alt me-1" style="color:var(--p);"></i>{{ u.location }}
+        </div>
+        {% endif %}
+      </div>
+      <a href="{% url 'profile' u.username %}"
+         class="btn btn-outline-primary btn-sm fw-600 flex-shrink-0">
+        <i class="bi bi-person"></i>
+      </a>
+    </div>
+  </div>
+  {% empty %}
+  {% if query %}
+  <div class="col-12">
+    <div class="page-glass-card p-5 text-center">
+      <i class="bi bi-person-x" style="font-size:2.8rem;color:var(--muted);display:block;margin-bottom:.75rem;"></i>
+      <p style="color:var(--muted);margin:0;">Нікого не знайдено за запитом <strong>«{{ query }}»</strong></p>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12">
+    <div class="page-glass-card p-5 text-center">
+      <i class="bi bi-search" style="font-size:2.8rem;color:var(--muted);display:block;margin-bottom:.75rem;"></i>
+      <p style="color:var(--muted);margin:0;">Введи ім'я або нікнейм для пошуку</p>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
 
-{% block extra_js %}
-<script>
-function switchTab(tab, btn) {
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.search-tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
-  btn.classList.add('active');
-  document.getElementById('tab-hidden').value = tab;
-}
-</script>
 {% endblock %}

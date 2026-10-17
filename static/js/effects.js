@@ -1,678 +1,436 @@
 /* ============================================================
-   НЕФК effects.js — кнопка вибору анімацій + 10 ефектів
-   Кнопка "🎨" фіксована в лівому нижньому куті
+   НЕФК effects.js v2 — Clean effects panel + 10 animations
+   Кнопка фіксована ліворуч знизу
    ============================================================ */
 
 const FX_KEY = 'nemk-fx';
 
-const EFFECTS = [
-  {
-    id: 'none',
-    name: 'Вимкнено',
-    icon: '⛔',
-    desc: 'Без ефектів',
-    apply: () => _fxStop(),
-  },
-  {
-    id: 'matrix',
-    name: 'Матриця',
-    icon: '🟢',
-    desc: 'Зелені символи падають',
-    apply: () => _fxMatrix(),
-  },
-  {
-    id: 'snow',
-    name: 'Сніг',
-    icon: '❄️',
-    desc: 'Падаючі сніжинки',
-    apply: () => _fxSnow(),
-  },
-  {
-    id: 'neon',
-    name: 'Неон',
-    icon: '💜',
-    desc: 'Неонове свічення карток',
-    apply: () => _fxNeon(),
-  },
-  {
-    id: 'particles',
-    name: 'Частинки',
-    icon: '✨',
-    desc: 'Плаваючі частинки',
-    apply: () => _fxParticles(),
-  },
-  {
-    id: 'rainbow',
-    name: 'Веселка',
-    icon: '🌈',
-    desc: 'Веселковий градієнт фону',
-    apply: () => _fxRainbow(),
-  },
-  {
-    id: 'glitch',
-    name: 'Глітч',
-    icon: '📺',
-    desc: 'Глітч-ефект на картках',
-    apply: () => _fxGlitch(),
-  },
-  {
-    id: 'bubbles',
-    name: 'Бульбашки',
-    icon: '🫧',
-    desc: 'Бульбашки пливуть вгору',
-    apply: () => _fxBubbles(),
-  },
-  {
-    id: 'stars',
-    name: 'Зоряне небо',
-    icon: '🌌',
-    desc: 'Мерехтливі зірки',
-    apply: () => _fxStarfield(),
-  },
-  {
-    id: 'cursor',
-    name: 'Хвіст курсора',
-    icon: '🖱️',
-    desc: 'Слід за курсором',
-    apply: () => _fxCursorTrail(),
-  },
-  {
-    id: 'fireworks',
-    name: 'Феєрверк',
-    icon: '🎆',
-    desc: 'Феєрверки по кліку',
-    apply: () => _fxFireworks(),
-  },
+const FX_LIST = [
+  { id:'off',       icon:'○',  name:'Вимкнено',        nameEn:'Off',           desc:'Без ефектів',                  descEn:'No effects' },
+  { id:'particles', icon:'◉',  name:'Частинки',         nameEn:'Particles',     desc:'З\'єднані точки у фоні',       descEn:'Connected dots background' },
+  { id:'stars',     icon:'✦',  name:'Зірки',            nameEn:'Stars',         desc:'Мерехтливі зірки',             descEn:'Twinkling starfield' },
+  { id:'snow',      icon:'*',  name:'Сніг',             nameEn:'Snow',          desc:'Падаючі сніжинки',             descEn:'Falling snowflakes' },
+  { id:'matrix',    icon:'▓',  name:'Матриця',          nameEn:'Matrix',        desc:'Символи НЕФК падають',         descEn:'NEFC symbols falling' },
+  { id:'neon',      icon:'◈',  name:'Неон',             nameEn:'Neon',          desc:'Пульсуюче підсвічення карток', descEn:'Pulsing card glow' },
+  { id:'bubbles',   icon:'◎',  name:'Бульбашки',        nameEn:'Bubbles',       desc:'Прозорі кулі вгору',           descEn:'Transparent bubbles rising' },
+  { id:'aurora',    icon:'≋',  name:'Аврора',           nameEn:'Aurora',        desc:'Переливний градієнт фону',     descEn:'Shifting gradient background' },
+  { id:'cursor',    icon:'⊕',  name:'Слід',             nameEn:'Trail',         desc:'Хвіст за курсором',            descEn:'Cursor trail effect' },
+  { id:'glitch',    icon:'⚡',  name:'Глітч',            nameEn:'Glitch',        desc:'Помехи на картках',            descEn:'Glitch effect on cards' },
+  { id:'fire',      icon:'▲',  name:'Феєрверк',         nameEn:'Fireworks',     desc:'Вибухи по кліку',              descEn:'Fireworks on click' },
 ];
 
-let _currentFx = localStorage.getItem(FX_KEY) || 'none';
-let _fxCleanup = null;  // функція очищення поточного ефекту
-let _panelOpen = false;
+let _cur = localStorage.getItem(FX_KEY) || 'off';
+let _cleanup = null;
+let _open = false;
 
-/* ── Ін'єкція UI при DOMContentLoaded ─────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
-  _injectFxStyles();
-  _buildFxBtn();
-  _buildFxPanel();
-  // Відновити збережений ефект
-  if (_currentFx !== 'none') {
-    const fx = EFFECTS.find(e => e.id === _currentFx);
-    if (fx) setTimeout(() => fx.apply(), 600);
+  _css();
+  _buildBtn();
+  _buildPanel();
+  if (_cur !== 'off') {
+    const fx = FX_LIST.find(f => f.id === _cur);
+    if (fx) setTimeout(() => _apply(fx), 700);
   }
 });
 
-/* ── Кнопка 🎨 ─────────────────────────────────────────────── */
-function _buildFxBtn() {
+/* ── Кнопка ─────────────────────────────────────────────────── */
+function _buildBtn() {
   const btn = document.createElement('button');
   btn.id = 'fx-btn';
-  btn.title = 'Вибір анімацій';
-  btn.innerHTML = '<span class="fx-btn-icon">🎨</span><span class="fx-btn-label">Ефекти</span>';
-  btn.onclick = _toggleFxPanel;
+  btn.setAttribute('aria-label', 'Ефекти сайту');
+  btn.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="fx-btn-ico">
+      <circle cx="8" cy="8" r="3" fill="currentColor"/>
+      <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <span class="fx-btn-lbl">Ефекти</span>
+  `;
+  btn.onclick = _toggle;
   document.body.appendChild(btn);
 }
 
-/* ── Панель вибору ─────────────────────────────────────────── */
-function _buildFxPanel() {
-  const panel = document.createElement('div');
-  panel.id = 'fx-panel';
-  panel.setAttribute('role', 'dialog');
-  panel.setAttribute('aria-label', 'Вибір анімацій сайту');
+/* ── Панель ──────────────────────────────────────────────────── */
+function _buildPanel() {
+  const p = document.createElement('div');
+  p.id = 'fx-panel';
+  p.setAttribute('role', 'dialog');
+  p.setAttribute('aria-label', 'Вибір ефектів');
 
-  const header = document.createElement('div');
-  header.className = 'fx-panel-header';
-  header.innerHTML = `
-    <div class="fx-panel-title">
-      <span>🎨</span> Анімації сайту
+  p.innerHTML = `
+    <div class="fx-ph">
+      <div class="fx-pt">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="opacity:.7">
+          <circle cx="8" cy="8" r="3" fill="currentColor"/>
+          <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Ефекти сайту
+      </div>
+      <button class="fx-close" onclick="_toggle()" aria-label="Закрити">
+        <svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 1l8 8M9 1L1 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
     </div>
-    <button class="fx-panel-close" onclick="_toggleFxPanel()" aria-label="Закрити">✕</button>
+    <div class="fx-grid" id="fx-grid"></div>
+    <div class="fx-pf">
+      <span class="fx-pf-dot" id="fx-dot"></span>
+      <span id="fx-lbl">${_getLbl(_cur)}</span>
+    </div>
   `;
 
-  const grid = document.createElement('div');
-  grid.className = 'fx-panel-grid';
-
-  EFFECTS.forEach(fx => {
+  const grid = p.querySelector('#fx-grid');
+  FX_LIST.forEach(fx => {
     const card = document.createElement('button');
-    card.className = 'fx-card' + (fx.id === _currentFx ? ' fx-active' : '');
-    card.dataset.fxId = fx.id;
-    card.innerHTML = `
-      <span class="fx-card-icon">${fx.icon}</span>
-      <span class="fx-card-name">${fx.name}</span>
-      <span class="fx-card-desc">${fx.desc}</span>
-    `;
-    card.onclick = () => _selectFx(fx.id);
+    card.className = 'fx-card' + (fx.id === _cur ? ' _fxa' : '');
+    card.dataset.id = fx.id;
+    card.innerHTML = `<span class="fx-ci">${fx.icon}</span><span class="fx-cn">${fx.name}</span>`;
+    card.title = fx.desc;
+    card.onclick = () => _select(fx.id);
     grid.appendChild(card);
   });
 
-  const footer = document.createElement('div');
-  footer.className = 'fx-panel-footer';
-  footer.innerHTML = `<span id="fx-active-label">Активно: <b>${_getLabelById(_currentFx)}</b></span>`;
-
-  panel.appendChild(header);
-  panel.appendChild(grid);
-  panel.appendChild(footer);
-  document.body.appendChild(panel);
+  document.body.appendChild(p);
 }
 
-function _getLabelById(id) {
-  const fx = EFFECTS.find(e => e.id === id);
-  return fx ? `${fx.icon} ${fx.name}` : '⛔ Вимкнено';
+function _getLbl(id) {
+  const fx = FX_LIST.find(f => f.id === id);
+  return fx ? fx.name : 'Вимкнено';
 }
 
-function _toggleFxPanel() {
-  _panelOpen = !_panelOpen;
-  const panel = document.getElementById('fx-panel');
-  const btn   = document.getElementById('fx-btn');
-  if (panel) panel.classList.toggle('fx-panel-open', _panelOpen);
-  if (btn)   btn.classList.toggle('fx-btn-active', _panelOpen);
+function _toggle() {
+  _open = !_open;
+  document.getElementById('fx-panel')?.classList.toggle('_fxo', _open);
+  document.getElementById('fx-btn')?.classList.toggle('_fxba', _open);
 }
 
-function _selectFx(id) {
-  // Зупинити поточний
-  _fxStop();
-
-  _currentFx = id;
+function _select(id) {
+  _stop();
+  _cur = id;
   localStorage.setItem(FX_KEY, id);
-
-  // Оновити активну карту
-  document.querySelectorAll('.fx-card').forEach(c => {
-    c.classList.toggle('fx-active', c.dataset.fxId === id);
-  });
-
-  // Оновити footer
-  const lbl = document.getElementById('fx-active-label');
-  if (lbl) lbl.innerHTML = `Активно: <b>${_getLabelById(id)}</b>`;
-
-  // Запустити новий
-  const fx = EFFECTS.find(e => e.id === id);
-  if (fx) fx.apply();
-
-  // Закрити панель
-  setTimeout(_toggleFxPanel, 300);
+  document.querySelectorAll('.fx-card').forEach(c => c.classList.toggle('_fxa', c.dataset.id === id));
+  const lbl = document.getElementById('fx-lbl');
+  if (lbl) lbl.textContent = _getLbl(id);
+  const fx = FX_LIST.find(f => f.id === id);
+  if (fx) _apply(fx);
+  setTimeout(_toggle, 250);
 }
 
-/* ── Зупинити поточний ефект ──────────────────────────────── */
-function _fxStop() {
-  if (typeof _fxCleanup === 'function') {
-    _fxCleanup();
-    _fxCleanup = null;
-  }
-  // Прибрати залишки
-  ['#fx-canvas','#fx-rain','#fx-bubbles','#fx-stars',
-   '#fx-neon-style','#fx-rainbow-style','#fx-glitch-style',
-   '#fx-cursor-style'].forEach(sel => {
+function _apply(fx) {
+  const fns = { off:_off, particles:_particles, stars:_stars, snow:_snow, matrix:_matrix, neon:_neon, bubbles:_bubbles, aurora:_aurora, cursor:_cursor, glitch:_glitch, fire:_fire };
+  (fns[fx.id] || _off)();
+}
+
+/* ── Stop ────────────────────────────────────────────────────── */
+function _stop() {
+  if (typeof _cleanup === 'function') { _cleanup(); _cleanup = null; }
+  ['#_fx_cv','#_fx_sn','#_fx_bb','#_fx_ns','#_fx_gl','#_fx_au','#_fx_cs'].forEach(sel => {
     document.querySelector(sel)?.remove();
   });
-  document.removeEventListener('click', _fireworkClick);
   document.removeEventListener('mousemove', _cursorMove);
-  document.body.style.backgroundImage = '';
-  document.body.style.animation = '';
+  document.removeEventListener('click', _fireClick);
+  document.body.style.filter = '';
 }
 
-/* ══════════════════════════════════════════════════════════════
-   ЕФЕКТИ
-══════════════════════════════════════════════════════════════ */
+/* ──────────────────── EFFECTS ────────────────────────────────── */
 
-/* 1. MATRIX — зелені символи ──────────────────────────────── */
-function _fxMatrix() {
-  const canvas = document.createElement('canvas');
-  canvas.id = 'fx-canvas';
-  canvas.style.cssText = `
-    position:fixed;inset:0;z-index:-1;pointer-events:none;
-    opacity:.18;
-  `;
-  document.body.appendChild(canvas);
+function _off() { /* nothing */ }
 
-  const ctx = canvas.getContext('2d');
-  let w = canvas.width = window.innerWidth;
-  let h = canvas.height = window.innerHeight;
-  const cols = Math.floor(w / 16);
-  const drops = Array(cols).fill(1);
-  const chars = 'НЕФК0101ABCDEFGHIJKLM01АБВГДЕ01NEFC';
-
-  const draw = () => {
-    ctx.fillStyle = 'rgba(0,0,0,.05)';
-    ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = '#22c55e';
-    ctx.font = '14px monospace';
-    drops.forEach((y, i) => {
-      ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * 16, y * 16);
-      if (y * 16 > h && Math.random() > .975) drops[i] = 0;
-      drops[i]++;
-    });
-  };
-
-  const tid = setInterval(draw, 50);
-  const onResize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
-  window.addEventListener('resize', onResize);
-  _fxCleanup = () => { clearInterval(tid); window.removeEventListener('resize', onResize); };
-}
-
-/* 2. SNOW ──────────────────────────────────────────────────── */
-function _fxSnow() {
-  const cnt = 60;
-  const container = document.createElement('div');
-  container.id = 'fx-rain';
-  container.style.cssText = 'position:fixed;inset:0;z-index:9990;pointer-events:none;overflow:hidden;';
-
-  for (let i = 0; i < cnt; i++) {
-    const s = document.createElement('div');
-    const sz = 4 + Math.random() * 10;
-    const dur = 4 + Math.random() * 6;
-    const delay = Math.random() * 8;
-    const left = Math.random() * 100;
-    s.style.cssText = `
-      position:absolute;
-      left:${left}%;top:-20px;
-      width:${sz}px;height:${sz}px;
-      border-radius:50%;
-      background:rgba(147,197,253,.85);
-      animation:_snowFall ${dur}s linear ${delay}s infinite;
-      filter:blur(.5px);
-    `;
-    container.appendChild(s);
-  }
-  document.body.appendChild(container);
-  _fxCleanup = () => container.remove();
-}
-
-/* 3. NEON ──────────────────────────────────────────────────── */
-function _fxNeon() {
-  const st = document.createElement('style');
-  st.id = 'fx-neon-style';
-  st.textContent = `
-    .post-card, .post-card-gl, .page-glass-card, .sidebar-widget, .gl-card, .h-card {
-      animation: _neonPulse 2.5s ease-in-out infinite !important;
-    }
-    @keyframes _neonPulse {
-      0%,100%{ box-shadow: 0 0 8px rgba(37,99,235,.3), 0 0 20px rgba(37,99,235,.15); }
-      50%    { box-shadow: 0 0 20px rgba(14,165,233,.6), 0 0 40px rgba(14,165,233,.3),
-                           0 0 60px rgba(59,130,246,.2); }
-    }
-  `;
-  document.head.appendChild(st);
-  _fxCleanup = () => st.remove();
-}
-
-/* 4. PARTICLES ─────────────────────────────────────────────── */
-function _fxParticles() {
-  const canvas = document.createElement('canvas');
-  canvas.id = 'fx-canvas';
-  canvas.style.cssText = 'position:fixed;inset:0;z-index:-1;pointer-events:none;';
-  document.body.appendChild(canvas);
-
-  const ctx = canvas.getContext('2d');
-  let w = canvas.width = window.innerWidth;
-  let h = canvas.height = window.innerHeight;
-
-  const pts = Array.from({length: 80}, () => ({
-    x: Math.random()*w, y: Math.random()*h,
-    vx: (Math.random()-.5)*.6, vy: (Math.random()-.5)*.6,
-    r: 1.5+Math.random()*3,
-    op: .2+Math.random()*.5,
+/* 1. Particles — canvas з точками і лініями */
+function _particles() {
+  const cv = _canvas('_fx_cv', -1, .9);
+  const ctx = cv.getContext('2d');
+  let w = cv.width = innerWidth, h = cv.height = innerHeight;
+  const pts = Array.from({length:70}, () => ({
+    x:Math.random()*w, y:Math.random()*h,
+    vx:(Math.random()-.5)*.5, vy:(Math.random()-.5)*.5,
+    r:1+Math.random()*2.5, op:.15+Math.random()*.35
   }));
-
-  const draw = () => {
-    ctx.clearRect(0, 0, w, h);
-    pts.forEach(p => {
-      p.x += p.vx; p.y += p.vy;
-      if(p.x<0||p.x>w) p.vx*=-1;
-      if(p.y<0||p.y>h) p.vy*=-1;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(59,130,246,${p.op})`;
-      ctx.fill();
-    });
-    // З'єднуємо близькі частинки
-    for(let i=0;i<pts.length;i++){
-      for(let j=i+1;j<pts.length;j++){
-        const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y;
-        const dist=Math.sqrt(dx*dx+dy*dy);
-        if(dist<120){
-          ctx.beginPath();
-          ctx.moveTo(pts[i].x,pts[i].y);
-          ctx.lineTo(pts[j].x,pts[j].y);
-          ctx.strokeStyle=`rgba(59,130,246,${.12*(1-dist/120)})`;
-          ctx.lineWidth=.8;
-          ctx.stroke();
-        }
+  const loop = () => {
+    ctx.clearRect(0,0,w,h);
+    for (let i=0;i<pts.length;i++) {
+      const p=pts[i]; p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0||p.x>w) p.vx*=-1; if(p.y<0||p.y>h) p.vy*=-1;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(59,130,246,${p.op})`; ctx.fill();
+      for (let j=i+1;j<pts.length;j++) {
+        const q=pts[j], d=Math.hypot(p.x-q.x,p.y-q.y);
+        if(d<110){ ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y);
+          ctx.strokeStyle=`rgba(59,130,246,${.1*(1-d/110)})`; ctx.lineWidth=.7; ctx.stroke(); }
       }
     }
   };
-
-  const tid = setInterval(draw, 30);
-  const onR = () => { w=canvas.width=window.innerWidth; h=canvas.height=window.innerHeight; };
-  window.addEventListener('resize',onR);
-  _fxCleanup = () => { clearInterval(tid); window.removeEventListener('resize',onR); };
+  const tid = setInterval(loop,30);
+  const onR = () => { w=cv.width=innerWidth; h=cv.height=innerHeight; };
+  addEventListener('resize',onR);
+  _cleanup = () => { clearInterval(tid); removeEventListener('resize',onR); };
 }
 
-/* 5. RAINBOW ───────────────────────────────────────────────── */
-function _fxRainbow() {
-  const st = document.createElement('style');
-  st.id = 'fx-rainbow-style';
-  st.textContent = `
-    body.nemk-body {
-      background-image: none !important;
-      animation: _rainbowBg 8s linear infinite !important;
-    }
-    @keyframes _rainbowBg {
-      0%   { filter: hue-rotate(0deg); }
-      100% { filter: hue-rotate(360deg); }
-    }
-  `;
-  document.head.appendChild(st);
-  _fxCleanup = () => { st.remove(); document.body.style.filter=''; };
-}
-
-/* 6. GLITCH ────────────────────────────────────────────────── */
-function _fxGlitch() {
-  const st = document.createElement('style');
-  st.id = 'fx-glitch-style';
-  st.textContent = `
-    .navbar, .post-card, .post-card-gl, .page-glass-card {
-      animation: _glitchShake 6s ease-in-out infinite !important;
-    }
-    @keyframes _glitchShake {
-      0%,92%,100%{ transform:translate(0,0); filter:none; }
-      93%{ transform:translate(-3px,1px); filter:hue-rotate(90deg) brightness(1.2); }
-      94%{ transform:translate(3px,-1px); filter:hue-rotate(-60deg); }
-      95%{ transform:translate(-2px,2px); filter:brightness(.85) contrast(1.5); }
-      96%{ transform:translate(0,0);     filter:none; }
-      97%{ transform:translate(2px,-2px);filter:saturate(3); }
-      98%{ transform:translate(-1px,1px);filter:invert(.1); }
-      99%{ transform:translate(0,0);     filter:none; }
-    }
-  `;
-  document.head.appendChild(st);
-  _fxCleanup = () => st.remove();
-}
-
-/* 7. BUBBLES ───────────────────────────────────────────────── */
-function _fxBubbles() {
-  const container = document.createElement('div');
-  container.id = 'fx-bubbles';
-  container.style.cssText = 'position:fixed;inset:0;z-index:9990;pointer-events:none;overflow:hidden;';
-
-  const spawnBubble = () => {
-    const b = document.createElement('div');
-    const sz = 8 + Math.random() * 28;
-    const left = Math.random() * 100;
-    const dur = 5 + Math.random() * 8;
-    b.style.cssText = `
-      position:absolute;
-      left:${left}%;bottom:-40px;
-      width:${sz}px;height:${sz}px;
-      border-radius:50%;
-      border:1.5px solid rgba(147,197,253,.45);
-      background:rgba(59,130,246,.06);
-      animation:_bubbleRise ${dur}s ease-in forwards;
-    `;
-    container.appendChild(b);
-    setTimeout(() => b.remove(), dur * 1000 + 200);
-  };
-
-  const tid = setInterval(spawnBubble, 350);
-  document.body.appendChild(container);
-  _fxCleanup = () => { clearInterval(tid); container.remove(); };
-}
-
-/* 8. STARFIELD ─────────────────────────────────────────────── */
-function _fxStarfield() {
-  const canvas = document.createElement('canvas');
-  canvas.id = 'fx-canvas';
-  canvas.style.cssText = 'position:fixed;inset:0;z-index:-1;pointer-events:none;';
-  document.body.appendChild(canvas);
-
-  const ctx = canvas.getContext('2d');
-  let w = canvas.width = window.innerWidth;
-  let h = canvas.height = window.innerHeight;
-
-  const stars = Array.from({length:200}, () => ({
-    x: Math.random()*w, y: Math.random()*h,
-    r: .5+Math.random()*1.8,
-    op: Math.random(),
-    dop: (Math.random()-.5)*.03,
+/* 2. Stars — мерехтливі зірки */
+function _stars() {
+  const cv = _canvas('_fx_cv', -1);
+  const ctx = cv.getContext('2d');
+  let w=cv.width=innerWidth, h=cv.height=innerHeight;
+  const ss = Array.from({length:180}, () => ({
+    x:Math.random()*w, y:Math.random()*h,
+    r:.4+Math.random()*1.6, op:Math.random(), d:(Math.random()-.5)*.025
   }));
-
-  const draw = () => {
+  const loop = () => {
     ctx.clearRect(0,0,w,h);
-    stars.forEach(s => {
-      s.op += s.dop;
-      if(s.op<=0||s.op>=1) s.dop *= -1;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(147,197,253,${s.op})`;
-      ctx.fill();
+    ss.forEach(s => {
+      s.op+=s.d; if(s.op<=0||s.op>=.9) s.d*=-1;
+      ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(147,197,253,${s.op})`; ctx.fill();
     });
   };
-
-  const tid = setInterval(draw, 50);
-  const onR = () => { w=canvas.width=window.innerWidth; h=canvas.height=window.innerHeight; };
-  window.addEventListener('resize',onR);
-  _fxCleanup = () => { clearInterval(tid); window.removeEventListener('resize',onR); };
+  const tid=setInterval(loop,55);
+  const onR=()=>{w=cv.width=innerWidth;h=cv.height=innerHeight;};
+  addEventListener('resize',onR);
+  _cleanup=()=>{clearInterval(tid);removeEventListener('resize',onR);};
 }
 
-/* 9. CURSOR TRAIL ──────────────────────────────────────────── */
-let _cursorTrails = [];
-function _cursorMove(e) {
-  const d = document.createElement('div');
-  const colors = ['#2563eb','#0ea5e9','#38bdf8','#60a5fa'];
-  d.style.cssText = `
-    position:fixed;left:${e.clientX}px;top:${e.clientY}px;
-    width:8px;height:8px;border-radius:50%;
-    background:${colors[Math.floor(Math.random()*colors.length)]};
-    pointer-events:none;z-index:99995;
-    transform:translate(-50%,-50%);
-    animation:_trailFade .6s ease forwards;
-  `;
-  document.body.appendChild(d);
-  _cursorTrails.push(d);
-  setTimeout(() => { d.remove(); _cursorTrails = _cursorTrails.filter(x=>x!==d); }, 650);
-}
-
-function _fxCursorTrail() {
-  const st = document.createElement('style');
-  st.id = 'fx-cursor-style';
-  st.textContent = `@keyframes _trailFade {
-    from{opacity:.9;transform:translate(-50%,-50%) scale(1)}
-    to  {opacity:0;transform:translate(-50%,-50%) scale(.1)}
-  }`;
-  document.head.appendChild(st);
-  document.addEventListener('mousemove', _cursorMove);
-  _fxCleanup = () => {
-    st.remove();
-    document.removeEventListener('mousemove', _cursorMove);
-    _cursorTrails.forEach(d => d.remove());
-    _cursorTrails = [];
-  };
-}
-
-/* 10. FIREWORKS (по кліку) ─────────────────────────────────── */
-function _fireworkClick(e) {
-  const colors = ['#2563eb','#0ea5e9','#38bdf8','#f59e0b','#f472b6','#22c55e','#fff'];
-  const bursts = 24;
-  for (let i = 0; i < bursts; i++) {
-    const p = document.createElement('div');
-    const ang = (i / bursts) * Math.PI * 2;
-    const dist = 40 + Math.random() * 80;
-    const dx = Math.cos(ang) * dist;
-    const dy = Math.sin(ang) * dist;
-    const sz = 4 + Math.random() * 7;
-    p.style.cssText = `
-      position:fixed;
-      left:${e.clientX}px;top:${e.clientY}px;
-      width:${sz}px;height:${sz}px;
-      border-radius:50%;
-      background:${colors[i % colors.length]};
-      pointer-events:none;z-index:99996;
-      animation:_fwBurst .8s ease forwards;
-      --fdx:${dx}px;--fdy:${dy}px;
-    `;
-    document.body.appendChild(p);
-    setTimeout(() => p.remove(), 900);
+/* 3. Snow — DOM сніжинки */
+function _snow() {
+  const wrap = document.createElement('div');
+  wrap.id='_fx_sn';
+  wrap.style.cssText='position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:9990;';
+  document.body.appendChild(wrap);
+  const inj=_styleOnce('_fx_sn_kf',`@keyframes _sfx_sn{0%{transform:translateY(-20px) translateX(0) rotate(0);opacity:.85}100%{transform:translateY(110vh) translateX(var(--sx)) rotate(360deg);opacity:0}}`);
+  for (let i=0;i<55;i++){
+    const el=document.createElement('div');
+    const sz=3+Math.random()*8, dur=5+Math.random()*7, delay=Math.random()*9, sx=(Math.random()-.5)*80;
+    el.style.cssText=`position:absolute;left:${Math.random()*100}%;top:-16px;width:${sz}px;height:${sz}px;border-radius:50%;background:rgba(219,234,254,.8);--sx:${sx}px;animation:_sfx_sn ${dur}s linear ${delay}s infinite;`;
+    wrap.appendChild(el);
   }
+  _cleanup=()=>{wrap.remove();inj?.remove();};
 }
 
-function _fxFireworks() {
-  const st = document.createElement('style');
-  st.id = 'fx-cursor-style';
-  st.textContent = `
-    body * { cursor: crosshair !important; }
-    @keyframes _fwBurst {
-      0%  {transform:translate(0,0) scale(1);opacity:1}
-      100%{transform:translate(var(--fdx),var(--fdy)) scale(.1);opacity:0}
-    }
-  `;
-  document.head.appendChild(st);
-  document.addEventListener('click', _fireworkClick);
-  _fxCleanup = () => {
-    st.remove();
-    document.removeEventListener('click', _fireworkClick);
+/* 4. Matrix — canvas символи */
+function _matrix() {
+  const cv=_canvas('_fx_cv',-1,.15);
+  const ctx=cv.getContext('2d');
+  let w=cv.width=innerWidth,h=cv.height=innerHeight;
+  const cols=Math.floor(w/15), drops=Array(cols).fill(1);
+  const chars='НЕФК01NEFC01ABCDE';
+  const loop=()=>{
+    ctx.fillStyle='rgba(0,0,0,.05)'; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='#22c55e'; ctx.font='13px monospace';
+    drops.forEach((y,i)=>{
+      ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*15,y*15);
+      if(y*15>h&&Math.random()>.975) drops[i]=0; drops[i]++;
+    });
   };
+  const tid=setInterval(loop,50);
+  const onR=()=>{w=cv.width=innerWidth;h=cv.height=innerHeight;};
+  addEventListener('resize',onR);
+  _cleanup=()=>{clearInterval(tid);removeEventListener('resize',onR);};
 }
 
-/* ── Inject styles ──────────────────────────────────────────── */
-function _injectFxStyles() {
-  if (document.getElementById('_fx_styles')) return;
-  const s = document.createElement('style');
-  s.id = '_fx_styles';
-  s.textContent = `
-    /* ── FX Button ── */
-    #fx-btn {
-      position:fixed;
-      bottom:1.75rem;left:1.75rem;
-      display:flex;align-items:center;gap:.45rem;
-      padding:.55rem 1rem;
-      border-radius:50px;
-      background:var(--card);
-      backdrop-filter:blur(24px) saturate(180%);
-      border:1px solid var(--border);
-      color:var(--text);
-      font-size:.8rem;font-weight:700;
-      cursor:pointer;z-index:9990;
-      box-shadow:var(--shadow);
-      transition:transform .2s,box-shadow .2s,background .2s;
-      overflow:hidden;
+/* 5. Neon — CSS pulse */
+function _neon() {
+  const st=_styleOnce('_fx_ns',`
+    .post-card,.post-card-gl,.page-glass-card,.sidebar-widget {
+      animation:_sfx_neon 3s ease-in-out infinite !important;
     }
-    #fx-btn::before {
-      content:'';position:absolute;inset:0;
-      background:linear-gradient(90deg,
-        transparent,rgba(37,99,235,.25),transparent);
-      background-size:200% 100%;
-      animation:_btnShimmer 2.5s linear infinite;
+    @keyframes _sfx_neon {
+      0%,100%{box-shadow:0 0 4px rgba(37,99,235,.2)}
+      50%    {box-shadow:0 0 16px rgba(37,99,235,.5),0 0 32px rgba(14,165,233,.25)}
     }
-    #fx-btn:hover {
-      transform:translateY(-3px) scale(1.04);
-      box-shadow:var(--shadow-lg);
-      background:linear-gradient(135deg,var(--p),var(--accent));
-      color:#fff;border-color:transparent;
-    }
-    #fx-btn:hover::before{display:none;}
-    #fx-btn.fx-btn-active {
-      background:linear-gradient(135deg,var(--p),var(--accent));
-      color:#fff;border-color:transparent;
-    }
-    .fx-btn-icon { font-size:1.1rem; }
-    .fx-btn-label { letter-spacing:.03em; }
+  `);
+  _cleanup=()=>st?.remove();
+}
 
-    /* ── FX Panel ── */
-    #fx-panel {
-      position:fixed;
-      bottom:5rem;left:1.75rem;
-      width:340px;
+/* 6. Bubbles — DOM бульбашки */
+function _bubbles() {
+  const wrap=document.createElement('div');
+  wrap.id='_fx_bb';
+  wrap.style.cssText='position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:9990;';
+  document.body.appendChild(wrap);
+  const inj=_styleOnce('_fx_bb_kf',`@keyframes _sfx_bb{0%{transform:translateY(0) scale(1);opacity:.6}100%{transform:translateY(-110vh) scale(1.15);opacity:0}}`);
+  const tid=setInterval(()=>{
+    const b=document.createElement('div');
+    const sz=6+Math.random()*22, dur=6+Math.random()*8;
+    b.style.cssText=`position:absolute;left:${Math.random()*100}%;bottom:-30px;width:${sz}px;height:${sz}px;border-radius:50%;border:1px solid rgba(147,197,253,.3);background:rgba(59,130,246,.04);animation:_sfx_bb ${dur}s ease-in forwards;`;
+    wrap.appendChild(b);
+    setTimeout(()=>b.remove(),(dur+.5)*1000);
+  },400);
+  _cleanup=()=>{clearInterval(tid);wrap.remove();inj?.remove();};
+}
+
+/* 7. Aurora — shifting gradient */
+function _aurora() {
+  const st=_styleOnce('_fx_au',`
+    body.nemk-body{animation:_sfx_au 10s linear infinite !important}
+    @keyframes _sfx_au{
+      0%  {filter:hue-rotate(0deg)  saturate(1)}
+      50% {filter:hue-rotate(30deg) saturate(1.15)}
+      100%{filter:hue-rotate(0deg)  saturate(1)}
+    }
+  `);
+  _cleanup=()=>{st?.remove();document.body.style.filter='';};
+}
+
+/* 8. Cursor trail */
+let _cursorMove=null;
+function _cursor(){
+  const inj=_styleOnce('_fx_cs',`@keyframes _sfx_tr{from{opacity:.8;transform:translate(-50%,-50%) scale(1)}to{opacity:0;transform:translate(-50%,-50%) scale(.05)}}`);
+  _cursorMove=e=>{
+    const d=document.createElement('div');
+    const colors=['#3b82f6','#60a5fa','#93c5fd'];
+    d.style.cssText=`position:fixed;left:${e.clientX}px;top:${e.clientY}px;width:7px;height:7px;border-radius:50%;background:${colors[Math.floor(Math.random()*colors.length)]};pointer-events:none;z-index:99995;animation:_sfx_tr .5s ease forwards;`;
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(),550);
+  };
+  document.addEventListener('mousemove',_cursorMove);
+  _cleanup=()=>{document.removeEventListener('mousemove',_cursorMove);inj?.remove();};
+}
+
+/* 9. Glitch */
+function _glitch(){
+  const st=_styleOnce('_fx_gl',`
+    .post-card,.post-card-gl,.page-glass-card{animation:_sfx_gl 7s ease-in-out infinite !important}
+    @keyframes _sfx_gl{
+      0%,90%,100%{transform:none;filter:none}
+      92%{transform:translateX(-2px);filter:hue-rotate(80deg) brightness(1.15)}
+      93%{transform:translateX(2px); filter:hue-rotate(-40deg)}
+      94%{transform:none;           filter:brightness(.9)}
+      96%{transform:translateX(1px);filter:saturate(2.5)}
+      97%{transform:none;           filter:none}
+    }
+  `);
+  _cleanup=()=>st?.remove();
+}
+
+/* 10. Fireworks on click */
+let _fireClick=null;
+function _fire(){
+  const inj=_styleOnce('_fx_cs',`
+    body *{cursor:crosshair !important}
+    @keyframes _sfx_fw{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--fdx),var(--fdy)) scale(.1);opacity:0}}
+  `);
+  _fireClick=e=>{
+    const cols=['#2563eb','#3b82f6','#60a5fa','#f59e0b','#22c55e','#f87171','#fff'];
+    for(let i=0;i<20;i++){
+      const p=document.createElement('div');
+      const a=(i/20)*Math.PI*2, d=35+Math.random()*70;
+      const sz=3+Math.random()*6;
+      p.style.cssText=`position:fixed;left:${e.clientX}px;top:${e.clientY}px;width:${sz}px;height:${sz}px;border-radius:50%;background:${cols[i%cols.length]};pointer-events:none;z-index:99996;--fdx:${Math.cos(a)*d}px;--fdy:${Math.sin(a)*d}px;animation:_sfx_fw .7s ease forwards;`;
+      document.body.appendChild(p);
+      setTimeout(()=>p.remove(),800);
+    }
+  };
+  document.addEventListener('click',_fireClick);
+  _cleanup=()=>{document.removeEventListener('click',_fireClick);inj?.remove();document.body.style.cursor='';};
+}
+
+/* ── Helpers ─────────────────────────────────────────────────── */
+function _canvas(id, zIndex=-1, opacity=1){
+  const cv=document.createElement('canvas');
+  cv.id=id;
+  cv.style.cssText=`position:fixed;inset:0;z-index:${zIndex};pointer-events:none;opacity:${opacity};`;
+  document.body.appendChild(cv);
+  return cv;
+}
+function _styleOnce(id, css){
+  if(document.getElementById(id)) return null;
+  const s=document.createElement('style'); s.id=id; s.textContent=css;
+  document.head.appendChild(s); return s;
+}
+
+/* ── CSS ─────────────────────────────────────────────────────── */
+function _css(){
+  if(document.getElementById('_fx_css')) return;
+  const s=document.createElement('style'); s.id='_fx_css';
+  s.textContent=`
+    /* Кнопка */
+    #fx-btn{
+      position:fixed;bottom:1.5rem;left:1.5rem;
+      display:flex;align-items:center;gap:.4rem;
+      padding:.38rem .85rem;
       background:var(--card);
-      backdrop-filter:blur(32px) saturate(200%);
-      border:1px solid var(--border);
-      border-radius:24px;
-      box-shadow:0 20px 60px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.1);
-      z-index:9989;
-      transform:scale(.88) translateY(16px);
+      backdrop-filter:blur(20px);
+      border:1px solid var(--divider);
+      border-radius:50px;
+      color:var(--text2);font-size:.76rem;font-weight:700;
+      cursor:pointer;z-index:9980;
+      box-shadow:var(--shadow);
+      transition:background .15s,color .15s,border-color .15s,transform .15s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    #fx-btn:hover{background:var(--hover-bg);color:var(--p);border-color:rgba(37,99,235,.2);transform:translateY(-1px);}
+    #fx-btn._fxba{background:var(--p);color:#fff;border-color:transparent;}
+    .fx-btn-ico{flex-shrink:0;color:currentColor;}
+    .fx-btn-lbl{letter-spacing:.02em;}
+
+    /* Панель */
+    #fx-panel{
+      position:fixed;bottom:4rem;left:1.5rem;
+      width:310px;
+      background:var(--card);
+      backdrop-filter:blur(28px) saturate(180%);
+      border:1px solid var(--divider);
+      border-radius:18px;
+      box-shadow:var(--shadow-lg);
+      z-index:9979;
+      transform:scale(.9) translateY(10px);
       opacity:0;pointer-events:none;
-      transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .25s;
+      transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .2s;
       overflow:hidden;
     }
-    #fx-panel.fx-panel-open {
-      transform:scale(1) translateY(0);
-      opacity:1;pointer-events:all;
-    }
-    .fx-panel-header {
+    #fx-panel._fxo{transform:scale(1) translateY(0);opacity:1;pointer-events:all;}
+
+    /* Header */
+    .fx-ph{
       display:flex;align-items:center;justify-content:space-between;
-      padding:.9rem 1.1rem;
-      background:linear-gradient(135deg,rgba(37,99,235,.15),rgba(14,165,233,.1));
+      padding:.7rem .9rem;
       border-bottom:1px solid var(--divider);
     }
-    .fx-panel-title {
-      font-size:.95rem;font-weight:800;color:var(--text);
-      display:flex;align-items:center;gap:.5rem;
-    }
-    .fx-panel-close {
-      width:26px;height:26px;border-radius:50%;
-      background:var(--hover-bg);border:1px solid var(--border);
-      color:var(--muted);font-size:.75rem;cursor:pointer;
+    .fx-pt{display:flex;align-items:center;gap:.4rem;font-size:.82rem;font-weight:700;color:var(--text);}
+    .fx-close{
+      width:22px;height:22px;border-radius:50%;
+      background:var(--hover-bg);border:1px solid var(--divider);
+      color:var(--muted);cursor:pointer;
       display:flex;align-items:center;justify-content:center;
-      transition:background .15s,color .15s;
+      transition:background .12s,color .12s;
     }
-    .fx-panel-close:hover{background:var(--red);color:#fff;border-color:transparent;}
+    .fx-close:hover{background:var(--red);color:#fff;border-color:transparent;}
 
     /* Grid */
-    .fx-panel-grid {
+    .fx-grid{
       display:grid;grid-template-columns:repeat(3,1fr);
-      gap:.5rem;padding:.85rem;
-      max-height:300px;overflow-y:auto;
-      scrollbar-width:thin;
+      gap:.35rem;padding:.65rem;
     }
-    .fx-card {
+    .fx-card{
       display:flex;flex-direction:column;align-items:center;
-      gap:.3rem;padding:.65rem .4rem;
-      border-radius:14px;
+      gap:.28rem;padding:.6rem .4rem;
+      border-radius:11px;
       background:var(--bg3);
       border:1.5px solid transparent;
       cursor:pointer;
-      transition:transform .18s,box-shadow .18s,background .18s,border-color .18s;
-      position:relative;overflow:hidden;
+      transition:background .15s,border-color .15s,transform .15s;
+      -webkit-tap-highlight-color:transparent;
     }
-    .fx-card::after {
-      content:'';position:absolute;inset:0;border-radius:inherit;
-      background:linear-gradient(135deg,rgba(37,99,235,.15),rgba(14,165,233,.1));
-      opacity:0;transition:opacity .2s;
+    .fx-card:hover{background:var(--hover-bg);transform:translateY(-2px);}
+    .fx-card._fxa{
+      border-color:var(--p);
+      background:rgba(37,99,235,.08);
     }
-    .fx-card:hover { transform:translateY(-3px) scale(1.04); box-shadow:var(--shadow); }
-    .fx-card:hover::after { opacity:1; }
-    .fx-active {
-      border-color:var(--p)!important;
-      background:rgba(37,99,235,.12)!important;
-      box-shadow:0 0 0 2px rgba(37,99,235,.2)!important;
-    }
-    .fx-active::after{opacity:1!important;}
-    .fx-card-icon  { font-size:1.5rem; }
-    .fx-card-name  { font-size:.74rem;font-weight:700;color:var(--text); }
-    .fx-card-desc  { font-size:.65rem;color:var(--muted);text-align:center;line-height:1.3; }
+    .fx-ci{font-size:1.35rem;line-height:1;}
+    .fx-cn{font-size:.7rem;font-weight:700;color:var(--text);text-align:center;}
 
-    .fx-panel-footer {
-      padding:.6rem 1.1rem;
+    /* Footer */
+    .fx-pf{
+      display:flex;align-items:center;gap:.5rem;
+      padding:.5rem .9rem;
       border-top:1px solid var(--divider);
-      font-size:.78rem;color:var(--muted);
-      background:var(--card);
+      font-size:.75rem;color:var(--muted);
     }
-    .fx-panel-footer b { color:var(--p); }
-
-    /* Keyframes for effects */
-    @keyframes _snowFall {
-      0%  {transform:translateY(0) translateX(0) rotate(0deg);opacity:.85}
-      100%{transform:translateY(110vh) translateX(${Math.floor(Math.random()*80-40)}px) rotate(360deg);opacity:0}
-    }
-    @keyframes _bubbleRise {
-      0%  {transform:translateY(0)     scale(1);   opacity:.7}
-      100%{transform:translateY(-110vh) scale(1.2); opacity:0}
-    }
-    @keyframes _btnShimmer {
-      0%  {background-position:200% 0}
-      100%{background-position:-200% 0}
+    .fx-pf-dot{
+      width:6px;height:6px;border-radius:50%;background:var(--green);
+      box-shadow:0 0 6px var(--green);flex-shrink:0;
     }
 
     /* Mobile */
     @media(max-width:480px){
-      #fx-btn   { bottom:1.25rem;left:1.25rem;padding:.45rem .8rem;font-size:.74rem; }
-      #fx-panel { width:calc(100vw - 2rem);left:1rem;bottom:4.5rem; }
+      #fx-btn{bottom:1.2rem;left:1.2rem;padding:.32rem .7rem;}
+      #fx-panel{width:calc(100vw - 1.5rem);left:.75rem;bottom:3.8rem;}
     }
   `;
   document.head.appendChild(s);

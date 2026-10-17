@@ -1,325 +1,303 @@
 <!DOCTYPE html>
-<html lang="uk" data-theme="dark">
+<html lang="uk">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🚫 Доступ заблоковано — НЕФК</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <title>Підозріла активність — НЕФК</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --bg:      #060f1e;
-      --card:    rgba(10,22,44,.85);
-      --border:  rgba(239,68,68,.25);
-      --p:       #ef4444;
-      --p2:      #f87171;
-      --blue:    #2563eb;
-      --text:    #e2eeff;
-      --muted:   #4a6a94;
-    }
-
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      font-family: 'Inter', sans-serif;
-      color: var(--text);
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #080e1a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       overflow: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Animated background ── */
-    .bg-grid {
+    /* ── Animated bg ── */
+    .bg {
       position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 20%, rgba(220,38,38,.1) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 80% 80%, rgba(239,68,68,.07) 0%, transparent 55%),
+        radial-gradient(ellipse 70% 60% at 50% 50%, rgba(30,41,59,.8) 0%, transparent 70%),
+        #080e1a;
+    }
+
+    /* Hexagonal grid overlay */
+    .grid {
+      position: fixed; inset: 0; z-index: 0; opacity: .06;
       background-image:
-        linear-gradient(rgba(239,68,68,.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(239,68,68,.04) 1px, transparent 1px);
-      background-size: 48px 48px;
-      animation: gridScroll 20s linear infinite;
+        linear-gradient(rgba(220,38,38,.4) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(220,38,38,.4) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: gridMove 15s linear infinite;
     }
-    @keyframes gridScroll {
+    @keyframes gridMove {
       0%   { background-position: 0 0; }
-      100% { background-position: 48px 48px; }
+      100% { background-position: 40px 40px; }
     }
 
-    .orb {
-      position: fixed; border-radius: 50%;
-      filter: blur(80px); pointer-events: none; z-index: 0;
-      animation: orbFloat ease-in-out infinite;
-    }
-    @keyframes orbFloat {
-      0%,100% { transform: translate(0,0) scale(1); }
-      50%      { transform: translate(20px,-30px) scale(1.08); }
+    /* Scan line */
+    .scanline {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom, transparent, transparent 3px,
+        rgba(0,0,0,.04) 3px, rgba(0,0,0,.04) 4px
+      );
     }
 
-    /* ── Main card ── */
+    /* ── Card ── */
     .card {
       position: relative; z-index: 10;
-      background: var(--card);
-      backdrop-filter: blur(32px) saturate(180%);
-      border: 1px solid var(--border);
-      border-radius: 28px;
-      padding: 3rem 2.5rem;
-      max-width: 520px; width: 90%;
+      background: rgba(15, 23, 42, .85);
+      backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(220,38,38,.2);
+      border-radius: 24px;
+      padding: 2.5rem 2.25rem;
+      width: 90%; max-width: 480px;
       text-align: center;
-      box-shadow: 0 0 0 1px rgba(239,68,68,.1), 0 24px 80px rgba(239,68,68,.12);
-      animation: cardIn .7s cubic-bezier(.34,1.56,.64,1) both;
+      box-shadow:
+        0 0 0 1px rgba(220,38,38,.08),
+        0 20px 60px rgba(0,0,0,.5),
+        0 0 40px rgba(220,38,38,.06);
+      animation: cardIn .6s cubic-bezier(.34,1.4,.64,1) both;
     }
     @keyframes cardIn {
-      from { transform: scale(.85) translateY(30px); opacity: 0; }
-      to   { transform: scale(1)  translateY(0);     opacity: 1; }
+      from { transform: scale(.88) translateY(24px); opacity: 0; }
+      to   { transform: scale(1)   translateY(0);    opacity: 1; }
     }
 
     /* Glass border shimmer */
     .card::before {
-      content: '';
-      position: absolute; inset: 0; border-radius: inherit;
+      content: ''; position: absolute; inset: 0; border-radius: inherit;
       padding: 1px;
-      background: linear-gradient(135deg,
-        rgba(239,68,68,.4), rgba(251,113,133,.2), rgba(239,68,68,.35));
-      -webkit-mask: linear-gradient(#fff 0 0) content-box,
-                    linear-gradient(#fff 0 0);
+      background: linear-gradient(135deg, rgba(220,38,38,.35), rgba(239,68,68,.15), rgba(220,38,38,.3));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor; mask-composite: exclude;
       pointer-events: none;
       animation: borderPulse 2.5s ease-in-out infinite;
     }
-    @keyframes borderPulse {
-      0%,100% { opacity: .6; }
-      50%      { opacity: 1; }
-    }
+    @keyframes borderPulse { 0%,100%{opacity:.5} 50%{opacity:1} }
 
-    /* ── Shield icon ── */
-    .shield-wrap {
-      width: 100px; height: 100px; border-radius: 50%;
-      background: rgba(239,68,68,.12);
-      border: 2px solid rgba(239,68,68,.3);
+    /* ── Icon ── */
+    .icon-wrap {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: rgba(220,38,38,.1);
+      border: 2px solid rgba(220,38,38,.25);
       display: flex; align-items: center; justify-content: center;
-      font-size: 2.8rem;
-      margin: 0 auto 1.5rem;
-      animation: shieldPulse 2s ease-in-out infinite;
-      box-shadow: 0 0 0 0 rgba(239,68,68,.4);
+      font-size: 2.2rem; margin: 0 auto 1.5rem;
+      animation: iconPulse 2.5s ease-in-out infinite;
+      box-shadow: 0 0 0 0 rgba(220,38,38,.3);
     }
-    @keyframes shieldPulse {
-      0%   { box-shadow: 0 0 0 0   rgba(239,68,68,.4); }
-      50%  { box-shadow: 0 0 0 20px rgba(239,68,68,.0); }
-      100% { box-shadow: 0 0 0 0   rgba(239,68,68,.0); }
-    }
-
-    /* ── 429 badge ── */
-    .code-badge {
-      display: inline-block;
-      font-size: .75rem; font-weight: 800;
-      padding: .25rem .8rem; border-radius: 20px;
-      background: rgba(239,68,68,.15);
-      color: var(--p2);
-      border: 1px solid rgba(239,68,68,.3);
-      letter-spacing: .08em;
-      margin-bottom: 1rem;
+    @keyframes iconPulse {
+      0%   { box-shadow: 0 0 0 0   rgba(220,38,38,.4); }
+      50%  { box-shadow: 0 0 0 16px rgba(220,38,38,.0); }
+      100% { box-shadow: 0 0 0 0   rgba(220,38,38,.0); }
     }
 
+    /* ── Status badge ── */
+    .status {
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: rgba(220,38,38,.12);
+      border: 1px solid rgba(220,38,38,.25);
+      border-radius: 20px; padding: .22rem .85rem;
+      font-size: .72rem; font-weight: 700;
+      color: #fca5a5; letter-spacing: .05em;
+      text-transform: uppercase; margin-bottom: 1rem;
+    }
+    .status-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #ef4444;
+      box-shadow: 0 0 6px #ef4444;
+      animation: blink 1.2s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── Title ── */
     h1 {
-      font-size: 2rem; font-weight: 900;
-      color: #fff; letter-spacing: -.5px;
-      margin-bottom: .75rem;
+      font-size: 1.75rem; font-weight: 900;
+      color: #f1f5f9; letter-spacing: -.4px;
+      margin-bottom: .65rem; line-height: 1.15;
     }
 
     .subtitle {
-      color: var(--muted); font-size: .95rem;
-      line-height: 1.7; margin-bottom: 2rem;
+      font-size: .9rem; color: #64748b; line-height: 1.7;
+      margin-bottom: 1.75rem;
     }
+    .subtitle strong { color: #94a3b8; font-weight: 600; }
 
-    /* ── Info rows ── */
-    .info-grid {
+    /* ── Info grid ── */
+    .info {
       display: grid; grid-template-columns: 1fr 1fr;
-      gap: .6rem; margin-bottom: 2rem;
-      text-align: left;
+      gap: .55rem; margin-bottom: 1.75rem;
     }
     .info-item {
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 12px; padding: .65rem .9rem;
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 12px; padding: .7rem .85rem;
+      text-align: left;
     }
-    .info-label { font-size: .68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .2rem; }
-    .info-value { font-size: .88rem; font-weight: 600; color: var(--text); font-family: monospace; }
+    .info-lbl {
+      font-size: .63rem; font-weight: 700; color: #475569;
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: .25rem;
+    }
+    .info-val {
+      font-size: .84rem; font-weight: 600; color: #cbd5e1;
+      font-family: monospace; word-break: break-all;
+    }
+
+    /* ── Warning box ── */
+    .warn {
+      background: rgba(220,38,38,.07);
+      border: 1px solid rgba(220,38,38,.18);
+      border-radius: 12px; padding: .75rem 1rem;
+      font-size: .81rem; color: #fca5a5;
+      margin-bottom: 1.75rem;
+      display: flex; gap: .6rem; align-items: flex-start;
+      text-align: left;
+    }
+    .warn-icon { font-size: .95rem; flex-shrink: 0; margin-top: .05rem; }
 
     /* ── Countdown ── */
-    .countdown-wrap {
-      margin-bottom: 2rem;
+    {% if retry_after and retry_after > 0 %}
+    .countdown { margin-bottom: 1.75rem; }
+    .cd-label { font-size: .75rem; color: #475569; margin-bottom: .4rem; }
+    .cd-num {
+      font-size: 2.8rem; font-weight: 900;
+      color: #ef4444; font-variant-numeric: tabular-nums; line-height: 1;
     }
-    .countdown-label { font-size: .8rem; color: var(--muted); margin-bottom: .5rem; }
-    .countdown-num {
-      font-size: 3rem; font-weight: 900;
-      color: var(--p2);
-      font-variant-numeric: tabular-nums;
-      line-height: 1;
-    }
-    .countdown-sub { font-size: .75rem; color: var(--muted); margin-top: .25rem; }
+    .cd-sub { font-size: .7rem; color: #475569; margin-top: .2rem; }
 
-    /* ── Progress bar ── */
-    .progress-wrap { margin-bottom: 2rem; }
-    .progress-track {
-      height: 4px; background: rgba(255,255,255,.08);
-      border-radius: 2px; overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--p), #f87171);
-      border-radius: 2px;
-      transition: width .5s linear;
-    }
+    .bar { height: 3px; background: rgba(255,255,255,.06); border-radius: 2px; margin-bottom: 1.75rem; overflow: hidden; }
+    .bar-fill { height: 100%; background: linear-gradient(90deg,#dc2626,#ef4444); border-radius: 2px; transition: width .5s linear; }
+    {% endif %}
 
-    /* ── Buttons ── */
-    .btn-home {
-      display: inline-flex; align-items: center; gap: .5rem;
-      padding: .82rem 2rem; border-radius: 14px;
-      background: linear-gradient(135deg, #2563eb, #0ea5e9);
-      color: #fff; font-weight: 700; font-size: .95rem;
-      text-decoration: none; border: none;
-      box-shadow: 0 6px 24px rgba(37,99,235,.4);
-      transition: transform .2s, filter .2s;
-      cursor: pointer;
+    /* ── Button ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: .45rem;
+      padding: .72rem 1.75rem; border-radius: 12px;
+      background: #1e293b; color: #94a3b8;
+      border: 1px solid rgba(255,255,255,.1);
+      font-size: .88rem; font-weight: 700;
+      text-decoration: none; cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
     }
-    .btn-home:hover { transform: translateY(-2px); filter: brightness(1.1); color: #fff; }
-
-    /* ── Warning message ── */
-    .warn-box {
-      background: rgba(239,68,68,.08);
-      border: 1px solid rgba(239,68,68,.2);
-      border-radius: 12px; padding: .85rem 1rem;
-      font-size: .82rem; color: #fca5a5;
-      margin-bottom: 1.5rem; text-align: left;
-      display: flex; gap: .65rem; align-items: flex-start;
-    }
-    .warn-box i { font-size: 1rem; flex-shrink: 0; margin-top: .05rem; }
+    .btn:hover { background: #334155; color: #e2e8f0; border-color: rgba(255,255,255,.2); }
 
     /* ── Footer ── */
-    .card-footer {
-      font-size: .72rem; color: var(--muted);
+    .foot {
+      font-size: .68rem; color: #334155;
       margin-top: 1.5rem; line-height: 1.6;
     }
-    .card-footer a { color: #60a5fa; text-decoration: none; }
-    .card-footer a:hover { text-decoration: underline; }
-
-    /* ── Scanline effect ── */
-    .scanlines {
-      position: fixed; inset: 0; z-index: 1; pointer-events: none;
-      background: repeating-linear-gradient(
-        to bottom,
-        transparent 0px, transparent 3px,
-        rgba(0,0,0,.06) 3px, rgba(0,0,0,.06) 4px
-      );
-    }
-
-    /* Center wrapper */
-    .center {
-      position: relative; z-index: 5;
-      min-height: 100vh;
-      display: flex; align-items: center; justify-content: center;
-      padding: 2rem 1rem;
-    }
+    .foot a { color: #475569; text-decoration: none; }
+    .foot a:hover { color: #94a3b8; }
   </style>
 </head>
 <body>
 
-<!-- Animated background -->
-<div class="bg-grid"></div>
-<div class="orb" style="width:500px;height:500px;background:rgba(239,68,68,.08);top:-100px;left:-150px;animation-duration:18s;"></div>
-<div class="orb" style="width:400px;height:400px;background:rgba(239,68,68,.06);bottom:-80px;right:-100px;animation-duration:14s;animation-delay:-6s;"></div>
-<div class="orb" style="width:300px;height:300px;background:rgba(37,99,235,.05);top:40%;right:20%;animation-duration:22s;animation-delay:-10s;"></div>
-<div class="scanlines"></div>
+<div class="bg"></div>
+<div class="grid"></div>
+<div class="scanline"></div>
 
-<div class="center">
-  <div class="card">
+<div class="card">
 
-    <div class="shield-wrap">🛡️</div>
+  <div class="icon-wrap">🛡️</div>
 
-    <div class="code-badge">HTTP 429 — TOO MANY REQUESTS</div>
-
-    <h1>Доступ тимчасово обмежено</h1>
-
-    <p class="subtitle">
-      Наша система виявила підозрілу активність з вашої IP-адреси.<br>
-      Це автоматичний захист від DDoS-атак та ботів.
-    </p>
-
-    <!-- Деталі -->
-    <div class="info-grid">
-      <div class="info-item">
-        <div class="info-label">Ваш IP</div>
-        <div class="info-value">{{ ip }}</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">Статус</div>
-        <div class="info-value" style="color:#f87171;">🔴 Заблоковано</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">Причина</div>
-        <div class="info-value" style="font-size:.78rem;">{{ reason|truncatechars:35 }}</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">Retry-After</div>
-        <div class="info-value">
-          {% if retry_after %}{{ retry_after }}с{% else %}Постійно{% endif %}
-        </div>
-      </div>
-    </div>
-
-    <!-- Попередження -->
-    <div class="warn-box">
-      <i class="bi bi-exclamation-triangle-fill"></i>
-      <span>Якщо ви вважаєте, що це помилка — зачекайте кілька хвилин і спробуйте знову. Повторні спроби прискорять видачу постійного бану.</span>
-    </div>
-
-    {% if retry_after and retry_after > 0 %}
-    <!-- Countdown -->
-    <div class="countdown-wrap">
-      <div class="countdown-label">Розблокування через</div>
-      <div class="countdown-num" id="countdown">{{ retry_after }}</div>
-      <div class="countdown-sub">секунд</div>
-    </div>
-
-    <!-- Progress bar -->
-    <div class="progress-wrap">
-      <div class="progress-track">
-        <div class="progress-fill" id="progress" style="width:100%"></div>
-      </div>
-    </div>
-    {% endif %}
-
-    <a href="/" class="btn-home" id="home-btn">
-      <i class="bi bi-house-fill"></i> На головну
-    </a>
-
-    <div class="card-footer">
-      <strong>НЕФК Суспільство</strong> · Система захисту v1.0<br>
-      Якщо проблема повторюється: <a href="mailto:nemk@nemk.com.ua">nemk@nemk.com.ua</a>
-    </div>
-
+  <div class="status">
+    <span class="status-dot"></span>
+    Доступ заблоковано
   </div>
+
+  <h1>Вибачте,<br>підозріла активність</h1>
+
+  <p class="subtitle">
+    Наша система захисту виявила підозрілу активність з вашої адреси.<br>
+    <strong>Це автоматичний захист</strong> — жодних персональних даних не збирається.
+  </p>
+
+  <div class="info">
+    <div class="info-item">
+      <div class="info-lbl">Ваш IP</div>
+      <div class="info-val">{{ ip }}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-lbl">Статус</div>
+      <div class="info-val" style="color:#f87171;">
+        {% if block_type == 'perm' %}Постійний бан{% elif block_type == 'vpn' %}VPN/Proxy{% else %}Тимчасовий бан{% endif %}
+      </div>
+    </div>
+    <div class="info-item">
+      <div class="info-lbl">Причина</div>
+      <div class="info-val" style="font-size:.75rem;">{{ reason|truncatechars:40 }}</div>
+    </div>
+    <div class="info-item">
+      <div class="info-lbl">Блокування</div>
+      <div class="info-val">
+        {% if retry_after and retry_after > 0 %}{{ retry_after }} сек{% else %}Назавжди{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="warn">
+    <span class="warn-icon">⚠️</span>
+    <span>
+      {% if block_type == 'vpn' %}
+        Виявлено використання VPN або проксі-сервера. Відключіть VPN та спробуйте знову.
+      {% elif block_type == 'perm' %}
+        Ваш IP заблокований назавжди через систематичні порушення. Зверніться до адміністратора.
+      {% else %}
+        Зачекайте кілька хвилин і спробуйте знову. Повторні спроби можуть призвести до постійного блокування.
+      {% endif %}
+    </span>
+  </div>
+
+  {% if retry_after and retry_after > 0 %}
+  <div class="countdown">
+    <div class="cd-label">Розблокування через</div>
+    <div class="cd-num" id="cd">{{ retry_after }}</div>
+    <div class="cd-sub">секунд</div>
+  </div>
+  <div class="bar">
+    <div class="bar-fill" id="bar" style="width:100%"></div>
+  </div>
+  {% endif %}
+
+  <a href="/" class="btn" id="home-btn">
+    ← На головну
+  </a>
+
+  <div class="foot">
+    <strong style="color:#475569;">НЕФК Суспільство</strong> · Система безпеки v2<br>
+    Помилкове блокування? <a href="mailto:nemk@nemk.com.ua">nemk@nemk.com.ua</a>
+  </div>
+
 </div>
 
 <script>
-  {% if retry_after and retry_after > 0 %}
-  const total = {{ retry_after }};
-  let left = total;
-  const cd  = document.getElementById('countdown');
-  const bar = document.getElementById('progress');
-  const btn = document.getElementById('home-btn');
+{% if retry_after and retry_after > 0 %}
+const total = {{ retry_after }};
+let left = total;
+const cd  = document.getElementById('cd');
+const bar = document.getElementById('bar');
 
-  const timer = setInterval(() => {
-    left--;
-    if (cd)  cd.textContent = left;
-    if (bar) bar.style.width = (left / total * 100) + '%';
-    if (left <= 0) {
-      clearInterval(timer);
-      if (cd) cd.textContent = '0';
-      // Плавний редірект
-      document.querySelector('.subtitle').textContent = '✅ Час вийшов! Перенаправлення...';
-      btn.style.animation = 'cardIn .5s ease both';
-      setTimeout(() => window.location.href = '/', 1000);
-    }
-  }, 1000);
-  {% endif %}
+const t = setInterval(() => {
+  left--;
+  if (cd) cd.textContent = left;
+  if (bar) bar.style.width = (left / total * 100) + '%';
+  if (left <= 0) {
+    clearInterval(t);
+    document.querySelector('.subtitle').innerHTML = '✅ Час вийшов! Перенаправлення…';
+    setTimeout(() => window.location.href = '/', 1200);
+  }
+}, 1000);
+{% endif %}
 </script>
 
 </body>

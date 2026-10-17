@@ -1,555 +1,974 @@
 {% extends 'base.html' %}
-{% load static %}
-{% block title %}Стрічка — НЕФК Суспільство{% endblock %}
+{% block title %}Стрічка — НЕФК{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/feed_tiktok.css' %}">
+<style>
+/* ══════════════════════════════════════════════════════════════
+   FEED — Classic 3-column layout  (nav | feed | widgets)
+   Анімації: slide-in, hover-lift, pulse, shimmer, reaction-pop
+══════════════════════════════════════════════════════════════ */
+
+/* ── Keyframes ── */
+@keyframes fadeUp   { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:none} }
+@keyframes fadeLeft { from{opacity:0;transform:translateX(-18px)} to{opacity:1;transform:none} }
+@keyframes fadeRight{ from{opacity:0;transform:translateX(18px)} to{opacity:1;transform:none} }
+@keyframes shimBg   { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+@keyframes pulseDot { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4)} 50%{box-shadow:0 0 0 6px rgba(34,197,94,0)} }
+@keyframes popIn    { 0%{transform:scale(.7);opacity:0} 70%{transform:scale(1.05)} 100%{transform:scale(1);opacity:1} }
+@keyframes slideUp  { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:none} }
+@keyframes heartBeat{ 0%,100%{transform:scale(1)} 14%{transform:scale(1.3)} 28%{transform:scale(1)} 42%{transform:scale(1.18)} 70%{transform:scale(1)} }
+@keyframes rPopIn   { from{opacity:0;transform:translateX(-50%) translateY(8px) scale(.88)} to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)} }
+
+/* ── Layout ── */
+.fg {
+  display: grid;
+  grid-template-columns: 220px 1fr 270px;
+  gap: 1.1rem;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1rem .9rem 2.5rem;
+  align-items: start;
+}
+
+/* ── LEFT NAV ── */
+.fl { position: sticky; top: 66px; animation: fadeLeft .45s ease both; }
+
+.fl-me {
+  display: flex; align-items: center; gap: .7rem;
+  padding: .8rem .9rem;
+  border-radius: 14px;
+  text-decoration: none;
+  margin-bottom: .4rem;
+  transition: background .15s, transform .15s;
+}
+.fl-me:hover { background: var(--hover-bg); transform: translateX(3px); }
+.fl-av { position: relative; flex-shrink: 0; }
+.fl-av img { border: 2px solid var(--divider); object-fit: cover; }
+.fl-status {
+  position: absolute; bottom: 1px; right: 1px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #22c55e; border: 1.5px solid var(--card-solid);
+  animation: pulseDot 2s ease infinite;
+}
+.fl-name { font-size: .87rem; font-weight: 700; color: var(--text); line-height: 1.2; }
+.fl-handle { font-size: .71rem; color: var(--muted); }
+
+.fl-sep { height: 1px; background: var(--divider); margin: .4rem 0 .5rem; }
+
+.fl-a {
+  display: flex; align-items: center; gap: .62rem;
+  padding: .52rem .88rem; border-radius: 11px;
+  text-decoration: none; color: var(--text2);
+  font-size: .87rem; font-weight: 600;
+  transition: background .15s, color .15s, transform .15s;
+  margin-bottom: .2rem; position: relative;
+}
+.fl-a:hover {
+  background: var(--hover-bg); color: var(--p);
+  transform: translateX(4px);
+}
+.fl-ico {
+  width: 30px; height: 30px; border-radius: 9px;
+  background: var(--bg3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .84rem; flex-shrink: 0;
+  transition: transform .2s;
+}
+.fl-a:hover .fl-ico { transform: scale(1.1) rotate(-5deg); }
+.fl-bdg {
+  margin-left: auto;
+  background: var(--red); color: #fff;
+  font-size: .62rem; font-weight: 800;
+  padding: .08rem .42rem; border-radius: 20px;
+  animation: popIn .4s ease both;
+}
+
+/* ── CENTER ── */
+.fc { min-width: 0; animation: fadeUp .4s ease both; }
+
+/* ── Composer ── */
+.composer {
+  background: var(--card);
+  border: 1px solid var(--divider);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: .85rem;
+  box-shadow: var(--shadow);
+  transition: box-shadow .2s, border-color .2s;
+}
+.composer:focus-within {
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(37,99,235,.25);
+}
+
+.cmp-top {
+  display: flex; align-items: center; gap: .72rem;
+  padding: .85rem 1rem;
+  cursor: pointer;
+}
+.cmp-fake {
+  flex: 1;
+  background: var(--bg3);
+  border: 1px solid var(--divider);
+  border-radius: 24px;
+  padding: .52rem 1rem;
+  font-size: .87rem; color: var(--muted);
+  transition: border-color .15s, background .15s;
+  user-select: none;
+}
+.cmp-fake:hover { border-color: var(--p); background: var(--hover-bg); }
+
+.cmp-body { display: none; }
+.cmp-body.open { display: block; animation: fadeUp .2s ease both; }
+
+.cmp-ta {
+  width: 100%; background: transparent !important;
+  border: none !important; box-shadow: none !important;
+  resize: none; font-size: .92rem; color: var(--text) !important;
+  padding: .65rem 1rem; min-height: 72px; outline: none;
+  transition: min-height .25s;
+}
+.cmp-ta:focus { min-height: 104px; }
+.cmp-ta::placeholder { color: var(--muted) !important; }
+
+.cmp-moods {
+  display: flex; gap: .25rem; padding: .35rem 1rem;
+  flex-wrap: wrap; border-top: 1px solid var(--divider);
+}
+.mood-chip {
+  padding: .18rem .62rem; border-radius: 20px;
+  border: 1px solid var(--divider);
+  background: transparent; cursor: pointer;
+  font-size: .74rem; font-weight: 600; color: var(--muted);
+  transition: all .15s; position: relative; overflow: hidden;
+}
+.mood-chip::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);
+  transform: translateX(-100%);
+  transition: transform .3s;
+}
+.mood-chip:hover::after { transform: translateX(100%); }
+.mood-chip:hover { border-color: var(--p); color: var(--p); }
+.mood-chip.on { background: var(--p); color: #fff; border-color: transparent; }
+
+.cmp-bar {
+  display: flex; align-items: center; gap: .22rem;
+  padding: .52rem .85rem; border-top: 1px solid var(--divider);
+}
+.ctb {
+  width: 31px; height: 31px; border-radius: 8px; border: none;
+  background: transparent; color: var(--muted); cursor: pointer;
+  font-size: .84rem; display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s, transform .15s;
+}
+.ctb:hover { background: var(--hover-bg); color: var(--p); transform: scale(1.15); }
+
+.cmp-ep { display:none; padding:.45rem .85rem; flex-wrap:wrap; gap:.18rem; border-top:1px solid var(--divider); }
+.cmp-ep.on { display:flex; animation:fadeUp .2s ease both; }
+.ep-b { font-size:1.18rem; cursor:pointer; padding:.1rem .16rem; border-radius:6px; border:none; background:transparent; transition:transform .12s; }
+.ep-b:hover { transform:scale(1.45); }
+
+.cmp-dz { display:none; border:2px dashed var(--divider); border-radius:10px; padding:.8rem; text-align:center; color:var(--muted); font-size:.82rem; cursor:pointer; margin:.3rem .85rem; transition:all .15s; }
+.cmp-dz.on { display:block; animation:fadeUp .2s ease both; }
+.cmp-dz.act,.cmp-dz:hover { border-color:var(--p); background:var(--hover-bg); color:var(--p); }
+.cmp-ln { display:none; padding:.3rem .85rem .65rem; }
+.cmp-ln.on { display:block; }
+.cmp-strip { display:none; gap:.35rem; flex-wrap:wrap; padding:.35rem .85rem; }
+.cmp-strip.on { display:flex; }
+.sth { position:relative; width:56px; height:56px; border-radius:9px; overflow:hidden; animation:popIn .25s ease both; }
+.sth img { width:100%;height:100%;object-fit:cover; }
+.sth-x { position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.7);color:#fff;border:none;cursor:pointer;font-size:.5rem;display:flex;align-items:center;justify-content:center; }
+.ccnt { font-size:.68rem; color:var(--muted); margin-left:.28rem; }
+.ccnt.w{color:var(--yellow);} .ccnt.d{color:var(--red);}
+
+/* ── Filter ── */
+.ftabs {
+  display: flex; gap: .3rem; margin-bottom: .78rem;
+  overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
+}
+.ftabs::-webkit-scrollbar{display:none;}
+.ftab {
+  padding: .28rem .78rem; border-radius: 20px;
+  border: 1px solid var(--divider);
+  background: transparent; color: var(--muted);
+  font-size: .78rem; font-weight: 600; cursor: pointer;
+  white-space: nowrap; flex-shrink: 0;
+  transition: all .15s;
+}
+.ftab:hover { border-color: var(--p); color: var(--p); transform: translateY(-1px); }
+.ftab.on {
+  background: var(--p); color: #fff; border-color: transparent;
+  box-shadow: 0 3px 10px rgba(37,99,235,.3);
+}
+
+/* ── Post card ── */
+.pcard {
+  background: var(--card);
+  border: 1px solid var(--divider);
+  border-radius: 16px;
+  margin-bottom: .75rem;
+  overflow: visible;
+  box-shadow: var(--shadow);
+  animation: slideUp .35s ease both;
+  transition: box-shadow .2s, transform .2s, border-color .2s;
+}
+.pcard:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+  border-color: rgba(37,99,235,.15);
+}
+
+.pc-b { padding: .9rem 1rem; }
+
+/* Empty state */
+.fempty { text-align:center;padding:3rem 1rem;color:var(--muted); }
+.pc-alink { display:flex; align-items:center; gap:.6rem; text-decoration:none; }
+.pc-av { position:relative; flex-shrink:0; }
+.pc-av img {
+  border: 2px solid var(--divider); object-fit: cover;
+  transition: border-color .2s, transform .2s;
+}
+.pc-alink:hover .pc-av img { border-color: var(--p); transform: scale(1.05); }
+.pc-avdot {
+  position:absolute;bottom:1px;right:1px;
+  width:9px;height:9px;border-radius:50%;
+  background:var(--green);border:1.5px solid var(--card-solid);
+  animation:pulseDot 2.5s ease infinite;
+}
+.pc-nm { font-size:.88rem; font-weight:700; color:var(--text); line-height:1.2; }
+.pc-mt { font-size:.7rem; color:var(--muted); display:flex; align-items:center; gap:.3rem; margin-top:.1rem; }
+.pc-grp { color:var(--p); font-weight:600; text-decoration:none; }
+.pc-grp:hover { text-decoration:underline; }
+
+.pc-mbtn {
+  width:28px;height:28px;border-radius:7px;border:none;
+  background:transparent;color:var(--muted);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.82rem;transition:background .15s,color .15s,transform .15s;
+}
+.pc-mbtn:hover { background:var(--hover-bg);color:var(--text);transform:rotate(90deg); }
+
+.pc-rp {
+  display:flex;align-items:center;gap:.4rem;
+  padding:.42rem .7rem;border-radius:9px;
+  background:var(--bg3);border-left:2.5px solid var(--p);
+  font-size:.8rem;color:var(--muted);margin-bottom:.55rem;
+  animation:fadeLeft .3s ease both;
+}
+.pc-rp a { color:var(--p);font-weight:700;text-decoration:none; }
+.pc-rp a:hover { text-decoration:underline; }
+
+.pc-txt {
+  font-size:.91rem;line-height:1.7;color:var(--text);
+  margin-bottom:.6rem;white-space:pre-wrap;word-break:break-word;
+}
+
+.pc-img {
+  border-radius:12px;overflow:hidden;cursor:zoom-in;margin-bottom:.6rem;
+  position:relative;
+}
+.pc-img img {
+  width:100%;max-height:400px;object-fit:cover;display:block;
+  transition:transform .35s,filter .35s;
+}
+.pc-img:hover img { transform:scale(1.02);filter:brightness(1.05); }
+.pc-img-overlay {
+  position:absolute;inset:0;
+  background:linear-gradient(transparent 60%,rgba(0,0,0,.35));
+  opacity:0;transition:opacity .25s;
+}
+.pc-img:hover .pc-img-overlay { opacity:1; }
+
+.pc-lnk {
+  display:flex;align-items:center;gap:.5rem;
+  padding:.55rem .78rem;border-radius:10px;
+  background:var(--bg3);border:1px solid var(--divider);
+  text-decoration:none;color:var(--p);font-size:.8rem;
+  margin-bottom:.6rem;transition:background .15s,transform .15s;
+}
+.pc-lnk:hover { background:var(--hover-bg);transform:translateX(3px); }
+
+/* React chips */
+.rc-bar {
+  display:flex;gap:.28rem;flex-wrap:wrap;
+  padding:.3rem 1rem .1rem;
+}
+.rc-chip {
+  display:inline-flex;align-items:center;gap:.22rem;
+  padding:.14rem .52rem;border-radius:20px;
+  background:var(--bg3);border:1px solid var(--divider);
+  font-size:.75rem;cursor:pointer;
+  transition:background .15s,border-color .15s,transform .15s;
+}
+.rc-chip:hover { border-color:var(--p);background:var(--hover-bg);transform:scale(1.08); }
+.rc-chip.me { background:rgba(37,99,235,.1);border-color:rgba(37,99,235,.28); }
+
+/* Stats */
+.pc-stats {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.28rem 0;font-size:.73rem;color:var(--muted);
+  border-top:1px solid var(--divider);
+}
+
+/* Actions */
+.pc-acts { display:flex; border-top:1px solid var(--divider); }
+.pa {
+  flex:1;display:flex;align-items:center;justify-content:center;gap:.3rem;
+  padding:.5rem .3rem;border:none;background:transparent;cursor:pointer;
+  font-size:.8rem;font-weight:600;color:var(--muted);
+  transition:background .15s,color .15s;position:relative;
+}
+.pa:hover { background:var(--hover-bg);color:var(--p); }
+.pa.liked { color:var(--red)!important; }
+.pa.liked .pa-i { animation:heartBeat .6s ease; }
+.pa-i { font-size:.9rem;line-height:1; }
+.pa-n { font-size:.78rem; }
+
+/* Reaction popup */
+.rpop {
+  position:absolute;bottom:calc(100%+7px);left:50%;
+  transform:translateX(-50%) scale(.9);
+  background:var(--card);
+  backdrop-filter:blur(20px);
+  border:1px solid var(--divider);
+  border-radius:28px;padding:.32rem .48rem;
+  display:flex;gap:.08rem;
+  box-shadow:0 8px 32px rgba(0,0,0,.18);
+  opacity:0;pointer-events:none;
+  transition:opacity .15s,transform .15s;
+  z-index:200;white-space:nowrap;
+}
+.rpop.on {
+  opacity:1;pointer-events:all;
+  transform:translateX(-50%) scale(1);
+  animation:rPopIn .2s ease both;
+}
+.rb {
+  font-size:1.3rem;cursor:pointer;border:none;
+  background:transparent;padding:.04rem .1rem;border-radius:7px;
+  transition:transform .12s;
+}
+.rb:hover { transform:scale(1.55) translateY(-5px); }
+
+/* Comments */
+.pc-cbox { display:none;border-top:1px solid var(--divider);padding:.7rem 1rem; }
+.pc-cbox.on { display:block;animation:fadeUp .22s ease both; }
+.cc-row { display:flex;gap:.5rem;margin-bottom:.52rem;align-items:flex-start; }
+.cc-bub {
+  flex:1;background:var(--bg3);
+  border:1px solid var(--divider);
+  border-radius:12px;padding:.44rem .78rem;font-size:.82rem;
+  transition:border-color .15s;
+}
+.cc-bub:hover { border-color:rgba(37,99,235,.2); }
+.cc-nm { font-weight:700;color:var(--text);font-size:.79rem;margin-bottom:.08rem; }
+.cc-tx { color:var(--text2);line-height:1.55; }
+.cc-form { display:flex;gap:.45rem;align-items:center;margin-top:.5rem; }
+.cc-inp {
+  flex:1;background:var(--bg3)!important;
+  border:1px solid var(--divider)!important;
+  border-radius:22px!important;padding:.38rem .85rem!important;
+  font-size:.81rem!important;color:var(--text)!important;
+  transition:border-color .15s!important;
+}
+.cc-inp:focus { border-color:var(--p)!important; }
+
+/* ── RIGHT SIDEBAR ── */
+.fr { position:sticky;top:66px;animation:fadeRight .45s ease both; }
+.fr-card {
+  background:var(--card);
+  border:1px solid var(--divider);
+  border-radius:14px;overflow:hidden;
+  margin-bottom:.72rem;
+  box-shadow:var(--shadow);
+  transition:box-shadow .2s,border-color .2s;
+}
+.fr-card:hover { box-shadow:var(--shadow-lg); border-color:rgba(37,99,235,.12); }
+
+.fr-head { display:flex;align-items:center;justify-content:space-between;padding:.7rem .95rem .35rem; }
+.fr-ttl { font-size:.71rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em; }
+.fr-all { font-size:.71rem;font-weight:700;color:var(--p);text-decoration:none;transition:color .15s; }
+.fr-all:hover { color:var(--p2); }
+
+.fr-fri {
+  display:flex;align-items:center;gap:.57rem;
+  padding:.45rem .95rem;text-decoration:none;color:var(--text);
+  transition:background .15s,transform .15s;
+}
+.fr-fri:hover { background:var(--hover-bg);transform:translateX(3px); }
+.fr-sug { display:flex;align-items:center;gap:.57rem;padding:.4rem .95rem; }
+.fr-fw {
+  margin-left:auto;padding:.2rem .65rem;border-radius:20px;
+  background:var(--hover-bg);color:var(--p);
+  border:1px solid rgba(37,99,235,.2);
+  font-size:.71rem;font-weight:700;cursor:pointer;text-decoration:none;
+  white-space:nowrap;transition:all .15s;
+}
+.fr-fw:hover { background:var(--p);color:#fff;border-color:transparent;transform:scale(1.05); }
+.fr-tr { display:flex;align-items:center;justify-content:space-between;padding:.38rem .95rem;font-size:.82rem; }
+.fr-tag { color:var(--p);font-weight:700;cursor:pointer;transition:color .15s; }
+.fr-tag:hover { color:var(--p2); }
+.fr-cnt { background:var(--bg3);color:var(--muted);padding:.1rem .44rem;border-radius:20px;font-size:.68rem;font-weight:700; }
+
+/* ── Post header fix for friend btn ── */
+.pc-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:.65rem; flex-wrap:wrap; gap:.4rem; }
+.add-friend-btn:hover { background:var(--p)!important; color:#fff!important; border-color:transparent!important; transform:scale(1.05); }
+.fe-ico {
+  width:62px;height:62px;border-radius:50%;
+  background:var(--bg3);border:1px solid var(--divider);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.6rem;margin:0 auto .95rem;
+  animation:fadeUp .5s ease both;
+}
+
+/* Lightbox */
+#lbx{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.93);align-items:center;justify-content:center;}
+#lbx.on{display:flex;}
+#lbx img{max-width:94vw;max-height:94vh;border-radius:14px;object-fit:contain;animation:popIn .3s ease both;}
+.lbx-x{position:absolute;top:.9rem;right:.9rem;background:rgba(255,255,255,.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.lbx-x:hover{background:rgba(255,255,255,.22);}
+
+/* Toast */
+#ftoasts{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);z-index:10000;display:flex;flex-direction:column;align-items:center;gap:.38rem;pointer-events:none;}
+.ftst{background:var(--card);border:1px solid var(--divider);border-radius:50px;padding:.42rem 1.15rem;font-size:.8rem;font-weight:700;color:var(--text);box-shadow:var(--shadow-lg);animation:popIn .3s ease both;}
+
+/* Mobile nav */
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--navbar);backdrop-filter:blur(22px);border-top:1px solid var(--divider);z-index:990;padding:.35rem 0 calc(.35rem + env(safe-area-inset-bottom));}
+.mob-nav-in{display:flex;align-items:center;justify-content:space-around;max-width:480px;margin:0 auto;}
+.mnb{display:flex;flex-direction:column;align-items:center;gap:.12rem;padding:.32rem .5rem;border-radius:9px;text-decoration:none;color:var(--muted);font-size:.6rem;font-weight:600;transition:color .15s;min-width:44px;position:relative;}
+.mnb:hover,.mnb.cur{color:var(--p);}
+.mnb i{font-size:1.22rem;}
+.mndot{position:absolute;top:.28rem;right:calc(50% - 13px);width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid var(--navbar);}
+
+/* ── Responsive ── */
+@media(max-width:1080px){
+  .fg{grid-template-columns:60px 1fr 240px;gap:.8rem;}
+  .fl-name,.fl-handle,.fl-a span:not(.fl-ico),.fl-bdg{display:none;}
+  .fl-me{padding:.55rem;justify-content:center;}
+  .fl-a{padding:.52rem;justify-content:center;}
+}
+@media(max-width:820px){
+  .fg{grid-template-columns:60px 1fr;gap:.7rem;}
+  .fr{display:none;}
+}
+@media(max-width:600px){
+  .fg{grid-template-columns:1fr;padding:.65rem .65rem 5.5rem;}
+  .fl{display:none;}
+  .mob-nav{display:flex;}
+}
+</style>
 {% endblock %}
 
 {% block content %}
 
-<!-- ══ STORIES ROW ══════════════════════════════════════════════ -->
-<div class="stories-row" id="stories-row">
-  <div class="stories-inner">
-
-    <!-- Add story (current user) -->
-    <div class="story-item story-add" onclick="document.getElementById('img-file-input').click()">
-      <div class="story-ring story-ring-add">
-        <img src="{{ request.user.get_avatar_url }}" class="story-avatar" alt="">
-        <span class="story-plus">+</span>
-      </div>
-      <span class="story-name">Твоя</span>
-    </div>
-
-    <!-- Stories from popular users -->
-    {% for u in popular_users %}
-    <a href="{% url 'profile' u.username %}" class="story-item">
-      <div class="story-ring">
-        <img src="{{ u.get_avatar_url }}" class="story-avatar" alt="{{ u.username }}">
-      </div>
-      <span class="story-name">{{ u.first_name|default:u.username|truncatechars:8 }}</span>
-    </a>
-    {% endfor %}
+<!-- Mobile bottom nav -->
+<nav class="mob-nav" aria-label="Навігація">
+  <div class="mob-nav-in">
+    <a href="{% url 'feed' %}"          class="mnb cur"><i class="bi bi-house-fill"></i><span>Стрічка</span></a>
+    <a href="{% url 'search_users' %}"  class="mnb"><i class="bi bi-search"></i><span>Пошук</span></a>
+    <a href="{% url 'friends' %}"       class="mnb"><i class="bi bi-people-fill"></i><span>Друзі</span>{% if pending_count %}<span class="mndot"></span>{% endif %}</a>
+    <a href="{% url 'conversations' %}" class="mnb"><i class="bi bi-chat-dots-fill"></i><span>Чат</span></a>
+    <a href="{% url 'notifications' %}" class="mnb"><i class="bi bi-bell-fill"></i><span>Сповіщення</span></a>
   </div>
-</div>
+</nav>
 
-<!-- ══ MAIN LAYOUT ══════════════════════════════════════════════ -->
-<div class="tt-layout">
+<div class="fg">
 
-  <!-- ── LEFT NAV (desktop) ─────────────────────────────────── -->
-  <aside class="tt-left-nav d-none d-xl-flex">
-    <a href="{% url 'profile' request.user.username %}" class="tt-nav-profile">
-      <img src="{{ request.user.get_avatar_url }}" class="tt-nav-avatar" alt="">
-      <div>
-        <div class="tt-nav-name">{{ request.user.get_full_name|default:request.user.username }}</div>
-        <div class="tt-nav-sub">@{{ request.user.username }}</div>
-      </div>
-    </a>
-    <nav class="tt-nav-links">
-      <a href="{% url 'feed' %}"          class="tt-nav-link active"><i class="bi bi-house-fill"></i><span>Стрічка</span></a>
-      <a href="{% url 'friends' %}"       class="tt-nav-link"><i class="bi bi-people-fill"></i><span>Друзі</span></a>
-      <a href="{% url 'groups' %}"        class="tt-nav-link"><i class="bi bi-grid-fill"></i><span>Групи</span></a>
-      <a href="{% url 'conversations' %}" class="tt-nav-link"><i class="bi bi-chat-dots-fill"></i><span>Чат</span></a>
-      <a href="{% url 'notifications' %}" class="tt-nav-link"><i class="bi bi-bell-fill"></i><span>Сповіщення</span></a>
-      <a href="{% url 'search_users' %}"  class="tt-nav-link"><i class="bi bi-search"></i><span>Пошук</span></a>
-    </nav>
-  </aside>
+<!-- ═══ LEFT — навігація ═════════════════════════════════════ -->
+<aside class="fl">
 
-  <!-- ── CENTER FEED ────────────────────────────────────────── -->
-  <main class="tt-feed">
+  <a href="{% url 'profile' request.user.username %}" class="fl-me text-decoration-none">
+    <div class="fl-av">
+      <img src="{{ request.user.get_avatar_url }}" class="rounded-circle" width="42" height="42" alt="">
+      <span class="fl-status"></span>
+    </div>
+    <div>
+      <div class="fl-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+      <div class="fl-handle">@{{ request.user.username }}</div>
+    </div>
+  </a>
 
-    <!-- Filter tabs -->
-    <div class="tt-tabs" role="tablist">
-      <button class="tt-tab active" onclick="filterFeed('all',this)"      role="tab">🌐 Для тебе</button>
-      <button class="tt-tab"        onclick="filterFeed('study',this)"    role="tab">📚 Навчання</button>
-      <button class="tt-tab"        onclick="filterFeed('sport',this)"    role="tab">⚽ Спорт</button>
-      <button class="tt-tab"        onclick="filterFeed('event',this)"    role="tab">🎉 Події</button>
-      <button class="tt-tab"        onclick="filterFeed('video',this)"    role="tab">🎬 Відео</button>
+  <div class="fl-sep"></div>
+
+  <a href="{% url 'feed' %}"          class="fl-a"><span class="fl-ico"><i class="bi bi-house-fill"        style="color:var(--p);"></i></span><span>Стрічка</span></a>
+  <a href="{% url 'friends' %}"       class="fl-a"><span class="fl-ico"><i class="bi bi-people-fill"       style="color:#8b5cf6;"></i></span><span>Друзі</span>{% if pending_count %}<span class="fl-bdg">{{ pending_count }}</span>{% endif %}</a>
+  <a href="{% url 'groups' %}"        class="fl-a"><span class="fl-ico"><i class="bi bi-grid-3x3-gap-fill" style="color:var(--yellow);"></i></span><span>Групи</span></a>
+  <a href="{% url 'conversations' %}" class="fl-a"><span class="fl-ico"><i class="bi bi-chat-dots-fill"    style="color:var(--green);"></i></span><span>Повідомлення</span></a>
+  <a href="{% url 'notifications' %}" class="fl-a"><span class="fl-ico"><i class="bi bi-bell-fill"         style="color:var(--red);"></i></span><span>Сповіщення</span></a>
+  <a href="{% url 'search_users' %}"  class="fl-a"><span class="fl-ico"><i class="bi bi-search"            style="color:var(--muted);"></i></span><span>Пошук</span></a>
+
+</aside>
+
+<!-- ═══ CENTER — стрічка ════════════════════════════════════ -->
+<main class="fc">
+
+  <!-- ── Composer ── -->
+  <div class="composer">
+    <div class="cmp-top" id="cmpToggle" onclick="openCmp()">
+      <img src="{{ request.user.get_avatar_url }}" class="rounded-circle flex-shrink-0"
+           style="width:38px;height:38px;object-fit:cover;border:1.5px solid var(--divider);" alt="">
+      <div class="cmp-fake">Що у тебе нового?</div>
     </div>
 
-    <!-- Composer trigger -->
-    <button class="tt-compose-btn" onclick="openComposer()">
-      <img src="{{ request.user.get_avatar_url }}" class="tt-compose-avatar" alt="">
-      <span>Що нового? Поділись зі спільнотою...</span>
-      <i class="bi bi-image ms-auto" style="color:var(--p);font-size:1.1rem;"></i>
-    </button>
+    <div class="cmp-body" id="cmpBody">
+      <form method="post" enctype="multipart/form-data" id="pf">
+        {% csrf_token %}
+        <input type="hidden" name="post_type" id="ptype" value="status">
+        <input type="file" name="image" id="imgI" accept="image/*" multiple class="d-none" onchange="prevImg(this)">
+        <input type="file" name="video" id="vidI" accept="video/*" class="d-none">
 
-    <!-- ── POSTS ────────────────────────────────────────────── -->
-    <div id="posts-container">
-      {% for post in posts %}
+        <div style="display:flex;gap:.7rem;padding:.7rem 1rem .3rem;align-items:flex-start;">
+          <img src="{{ request.user.get_avatar_url }}" class="rounded-circle flex-shrink-0"
+               style="width:38px;height:38px;object-fit:cover;border:1.5px solid var(--divider);margin-top:.1rem;" alt="">
+          <textarea name="content" class="cmp-ta" id="cmpTa"
+                    placeholder="Поділись думками зі спільнотою НЕФК..." maxlength="500"></textarea>
+        </div>
 
-      {% with has_media=post.image or post.video %}
-      <article class="tt-post {% if has_media %}tt-post-media{% endif %}"
-               id="post-{{ post.pk }}"
-               data-mood="{% if '📚' in post.content or 'навч' in post.content|lower %}study{% elif '⚽' in post.content or 'спорт' in post.content|lower %}sport{% elif '🎉' in post.content or 'поді' in post.content|lower %}event{% elif post.video %}video{% else %}all{% endif %}">
+        <div class="cmp-strip" id="cmpStrip"></div>
+        <div class="cmp-ep" id="cmpEP"></div>
+        <div class="cmp-dz" id="cmpDZ"
+             ondragover="event.preventDefault();this.classList.add('act')"
+             ondragleave="this.classList.remove('act')"
+             ondrop="doDrop(event)">
+          <i class="bi bi-cloud-upload d-block mb-1" style="font-size:1.3rem;"></i>Перетягни фото
+        </div>
+        <div class="cmp-ln" id="cmpLn">
+          <input type="url" name="link" class="form-control form-control-sm" placeholder="https://...">
+        </div>
 
-        {% if has_media %}
-        <!-- ═══ MEDIA POST (TikTok card) ═══ -->
+        <div class="cmp-moods">
+          <button type="button" class="mood-chip on" data-mood="">😊 Загальне</button>
+          <button type="button" class="mood-chip" data-mood="study">📚 Навчання</button>
+          <button type="button" class="mood-chip" data-mood="sport">⚽ Спорт</button>
+          <button type="button" class="mood-chip" data-mood="event">🎉 Подія</button>
+          <button type="button" class="mood-chip" data-mood="question">🤔 Питання</button>
+          <button type="button" class="mood-chip" data-mood="announce">📢 Оголошення</button>
+        </div>
 
-        {% if post.video %}
-        <!-- Video post -->
-        <div class="tt-media-wrap" onclick="toggleVideoPlay(this)">
-          <video class="tt-video" preload="metadata" loop playsinline muted>
-            <source src="{{ post.video.url }}">
-          </video>
-          <div class="tt-play-overlay"><i class="bi bi-play-fill"></i></div>
-          <div class="tt-video-mute" onclick="event.stopPropagation();toggleMute(this)">
-            <i class="bi bi-volume-mute-fill"></i>
+        <div class="cmp-bar">
+          <button type="button" class="ctb" onclick="imgI.click()" title="Фото"><i class="bi bi-image"></i></button>
+          <button type="button" class="ctb" onclick="vidI.click()" title="Відео"><i class="bi bi-camera-video"></i></button>
+          <button type="button" class="ctb" onclick="togEP()" title="Emoji"><i class="bi bi-emoji-smile"></i></button>
+          <button type="button" class="ctb" onclick="togDZ()" title="Файл"><i class="bi bi-paperclip"></i></button>
+          <span class="ccnt" id="ccnt">0 / 500</span>
+          <div class="ms-auto d-flex align-items-center gap-2">
+            <select class="form-select form-select-sm" style="width:auto;font-size:.74rem;border-radius:8px;" onchange="chTy(this.value)">
+              <option value="status">Статус</option>
+              <option value="photo">Фото</option>
+              <option value="video">Відео</option>
+              <option value="link">Посилання</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm fw-700" id="pbtn" disabled
+                    style="border-radius:9px;font-size:.81rem;padding:.32rem .88rem;">
+              <i class="bi bi-send-fill me-1" style="font-size:.72rem;"></i>Опублікувати
+            </button>
           </div>
         </div>
+      </form>
+    </div>
+  </div>
 
-        {% elif post.image %}
-        <!-- Image post -->
-        <div class="tt-media-wrap" onclick="openLightbox('{{ post.image.url }}')">
-          <img src="{{ post.image.url }}" class="tt-image" alt="" loading="lazy">
-          <div class="tt-img-overlay"></div>
-        </div>
-        {% endif %}
+  <!-- ── Filter tabs ── -->
+  <div class="ftabs" role="tablist">
+    <button class="ftab on" onclick="flt('all',this)">🌐 Всі</button>
+    <button class="ftab" onclick="flt('study',this)">📚 Навчання</button>
+    <button class="ftab" onclick="flt('sport',this)">⚽ Спорт</button>
+    <button class="ftab" onclick="flt('event',this)">🎉 Події</button>
+    <button class="ftab" onclick="flt('announce',this)">📢 Оголошення</button>
+  </div>
 
-        <!-- Overlay content (bottom of media card) -->
-        <div class="tt-media-bottom">
-          <a href="{% url 'profile' post.author.username %}" class="tt-media-author">
-            <img src="{{ post.author.get_avatar_url }}" class="tt-media-avatar" alt="">
+  <!-- ── Posts ── -->
+  <div id="posts">
+    {% for post in posts %}
+    <article class="pcard" id="p{{ post.pk }}" style="animation-delay:{{ forloop.counter0 }}0ms">
+      <div class="pc-b">
+
+        <!-- Header -->
+        <div class="pc-head">
+          <a href="{% url 'profile' post.author.username %}" class="pc-alink">
+            <div class="pc-av">
+              <img src="{{ post.author.get_avatar_url }}" class="rounded-circle" width="40" height="40" alt="">
+              <span class="pc-avdot"></span>
+            </div>
             <div>
-              <div class="tt-media-name">{{ post.author.get_full_name|default:post.author.username }}</div>
-              <div class="tt-media-time">{{ post.created_at|timesince }} тому</div>
+              <div class="pc-nm">{{ post.author.get_full_name|default:post.author.username }}</div>
+              <div class="pc-mt">
+                <i class="bi bi-clock" style="font-size:.62rem;"></i>
+                {{ post.created_at|timesince }} тому
+                {% if post.group %}· <a href="{% url 'group_detail' post.group.pk %}" class="pc-grp">{{ post.group.name }}</a>{% endif %}
+              </div>
             </div>
           </a>
-          {% if post.content %}
-          <p class="tt-media-caption">{{ post.content|truncatechars:120 }}</p>
-          {% endif %}
-        </div>
 
-        <!-- Side action buttons (TikTok style) -->
-        <div class="tt-side-actions">
-          <!-- Like -->
-          <div class="tt-side-btn">
-            <button class="tt-action-circle like-btn {% for l in post.likes.all %}{% if l.user_id == request.user.id %}liked{% endif %}{% endfor %}"
-                    data-post-id="{{ post.pk }}" data-url="{% url 'like_post' post.pk %}"
-                    aria-label="Лайк">
-              <i class="bi bi-heart{% for l in post.likes.all %}{% if l.user_id == request.user.id %}-fill{% endif %}{% endfor %}"></i>
-            </button>
-            <span class="tt-side-count">{{ post.like_count }}</span>
-          </div>
-          <!-- Comment -->
-          <div class="tt-side-btn">
-            <button class="tt-action-circle" onclick="toggleComments('{{ post.pk }}')" aria-label="Коментарі">
-              <i class="bi bi-chat-fill"></i>
-            </button>
-            <span class="tt-side-count">{{ post.comment_count }}</span>
-          </div>
-          <!-- Share -->
-          <div class="tt-side-btn">
-            <button class="tt-action-circle"
-                    onclick="copyPostLink('{{ request.scheme }}://{{ request.get_host }}{% url 'post_detail' post.pk %}')"
-                    aria-label="Поділитись">
-              <i class="bi bi-share-fill"></i>
-            </button>
-            <span class="tt-side-count">Ділись</span>
-          </div>
-          <!-- More -->
-          <div class="tt-side-btn dropdown">
-            <button class="tt-action-circle" data-bs-toggle="dropdown" aria-label="Більше">
-              <i class="bi bi-three-dots"></i>
-            </button>
+          <!-- Кнопка додати в друзі (якщо не свій пост і не друг) -->
+          {% if post.author != request.user %}
+            {% if post.author.id in friend_ids %}
+            <span style="font-size:.72rem;color:var(--muted);font-weight:600;
+                         padding:.22rem .65rem;border-radius:20px;
+                         background:rgba(34,197,94,.1);color:var(--green);
+                         border:1px solid rgba(34,197,94,.2);margin-left:.5rem;flex-shrink:0;">
+              ✓ Друг
+            </span>
+            {% elif post.author.id in sent_requests %}
+            <span style="font-size:.72rem;color:var(--muted);font-weight:600;
+                         padding:.22rem .65rem;border-radius:20px;
+                         background:var(--bg3);
+                         border:1px solid var(--divider);margin-left:.5rem;flex-shrink:0;">
+              Надіслано
+            </span>
+            {% else %}
+            <a href="{% url 'send_friend_request' post.author.username %}"
+               class="add-friend-btn"
+               style="font-size:.72rem;font-weight:700;
+                      padding:.22rem .7rem;border-radius:20px;
+                      background:rgba(37,99,235,.1);color:var(--p);
+                      border:1px solid rgba(37,99,235,.2);
+                      text-decoration:none;flex-shrink:0;margin-left:.5rem;
+                      transition:background .15s,color .15s,transform .15s;
+                      display:inline-flex;align-items:center;gap:.25rem;">
+              <i class="bi bi-person-plus" style="font-size:.7rem;"></i> Додати
+            </a>
+            {% endif %}
+          {% endif %}
+
+          <div class="dropdown" style="margin-left:auto;">
+            <button class="pc-mbtn" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
             <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" href="{% url 'post_detail' post.pk %}"><i class="bi bi-box-arrow-up-right me-2"></i>Відкрити</a></li>
+              <li><a class="dropdown-item" href="{% url 'post_detail' post.pk %}"><i class="bi bi-arrow-up-right me-2"></i>Відкрити</a></li>
+              <li><button class="dropdown-item" onclick="cpLnk('{{ request.scheme }}://{{ request.get_host }}{% url 'post_detail' post.pk %}')"><i class="bi bi-link me-2"></i>Копіювати посилання</button></li>
               {% if request.user == post.author or request.user.is_admin_role %}
-              <li><a class="dropdown-item text-danger" href="{% url 'delete_post' post.pk %}" onclick="return confirm('Видалити?')"><i class="bi bi-trash me-2"></i>Видалити</a></li>
+              <li><hr class="dropdown-divider my-1"></li>
+              <li><a class="dropdown-item" style="color:var(--red);" href="{% url 'delete_post' post.pk %}" onclick="return confirm('Видалити?')"><i class="bi bi-trash me-2"></i>Видалити</a></li>
               {% endif %}
             </ul>
           </div>
         </div>
 
-        {% else %}
-        <!-- ═══ TEXT POST ═══ -->
-        <div class="tt-text-post">
-
-          <!-- Author row -->
-          <div class="tt-text-header">
-            <a href="{% url 'profile' post.author.username %}" class="tt-text-author-link">
-              <div class="tt-author-avatar-wrap">
-                <img src="{{ post.author.get_avatar_url }}" class="tt-text-avatar" alt="">
-                <span class="tt-online-dot"></span>
-              </div>
-              <div>
-                <div class="tt-text-name">{{ post.author.get_full_name|default:post.author.username }}</div>
-                <div class="tt-text-meta">
-                  @{{ post.author.username }}
-                  {% if post.group %} · <a href="{% url 'group_detail' post.group.pk %}" style="color:var(--p);">{{ post.group.name }}</a>{% endif %}
-                  · {{ post.created_at|timesince }} тому
-                </div>
-              </div>
-            </a>
-            <div class="dropdown ms-auto">
-              <button class="tt-dots-btn" data-bs-toggle="dropdown" aria-label="Меню">⋯</button>
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="{% url 'post_detail' post.pk %}"><i class="bi bi-box-arrow-up-right me-2"></i>Відкрити</a></li>
-                <li><button class="dropdown-item" onclick="copyPostLink('{{ request.scheme }}://{{ request.get_host }}{% url 'post_detail' post.pk %}')"><i class="bi bi-link-45deg me-2"></i>Копіювати</button></li>
-                {% if request.user == post.author or request.user.is_admin_role %}
-                <li><hr class="dropdown-divider my-1"></li>
-                <li><a class="dropdown-item text-danger" href="{% url 'delete_post' post.pk %}" onclick="return confirm('Видалити?')"><i class="bi bi-trash me-2"></i>Видалити</a></li>
-                {% endif %}
-              </ul>
-            </div>
-          </div>
-
-          <!-- Repost -->
-          {% if post.original_post %}
-          <div class="tt-repost-badge">
-            🔁 Поширено від <a href="{% url 'profile' post.original_post.author.username %}">{{ post.original_post.author.get_full_name|default:post.original_post.author.username }}</a>
-          </div>
-          {% endif %}
-
-          <!-- Content -->
-          <p class="tt-text-content">{{ post.content }}</p>
-
-          {% if post.link %}
-          <a href="{{ post.link }}" target="_blank" rel="noopener" class="tt-link-preview">
-            <i class="bi bi-link-45deg"></i>{{ post.link|truncatechars:60 }}
-          </a>
-          {% endif %}
-
-          <!-- Stats -->
-          {% if post.like_count or post.comment_count %}
-          <div class="tt-stats">
-            {% if post.like_count %}<span>❤️ {{ post.like_count }}</span>{% endif %}
-            {% if post.comment_count %}<span class="ms-auto">💬 {{ post.comment_count }}</span>{% endif %}
-          </div>
-          {% endif %}
-
-          <!-- Actions -->
-          <div class="tt-text-actions">
-            <button class="tt-text-btn like-btn {% for l in post.likes.all %}{% if l.user_id == request.user.id %}liked{% endif %}{% endfor %}"
-                    data-post-id="{{ post.pk }}" data-url="{% url 'like_post' post.pk %}">
-              <i class="bi bi-heart{% for l in post.likes.all %}{% if l.user_id == request.user.id %}-fill{% endif %}{% endfor %}"></i>
-              <span class="like-count">{{ post.like_count }}</span>
-            </button>
-            <button class="tt-text-btn" onclick="toggleComments('{{ post.pk }}')">
-              <i class="bi bi-chat"></i> {{ post.comment_count }}
-            </button>
-            <form method="post" action="{% url 'repost' post.pk %}" style="display:contents;">
-              {% csrf_token %}
-              <button type="submit" class="tt-text-btn">🔁 Поширити</button>
-            </form>
-            <button class="tt-text-btn ms-auto"
-                    onclick="copyPostLink('{{ request.scheme }}://{{ request.get_host }}{% url 'post_detail' post.pk %}')">
-              <i class="bi bi-share"></i>
-            </button>
-          </div>
+        <!-- Repost -->
+        {% if post.original_post %}
+        <div class="pc-rp">
+          <i class="bi bi-arrow-repeat" style="color:var(--p);flex-shrink:0;"></i>
+          Поширено від <a href="{% url 'profile' post.original_post.author.username %}">{{ post.original_post.author.get_full_name|default:post.original_post.author.username }}</a>
         </div>
         {% endif %}
 
-        <!-- ── Inline comments (shared for both types) ── -->
-        <div id="comment-box-{{ post.pk }}" class="tt-comment-box" style="display:none;">
-          {% for comment in post.comments.all|slice:":3" %}
-          <div class="tt-comment">
-            <img src="{{ comment.author.get_avatar_url }}" class="tt-comment-avatar" alt="">
-            <div class="tt-comment-bubble">
-              <span class="tt-comment-author">{{ comment.author.get_full_name|default:comment.author.username }}</span>
-              {{ comment.content }}
-            </div>
+        <!-- Text -->
+        <p class="pc-txt">{{ post.content }}</p>
+
+        <!-- Media -->
+        {% if post.image %}
+        <div class="pc-img" onclick="openLB('{{ post.image.url }}')">
+          <img src="{{ post.image.url }}" alt="" loading="lazy">
+          <div class="pc-img-overlay"></div>
+        </div>
+        {% endif %}
+        {% if post.video %}
+        <video class="w-100 mb-2" style="border-radius:12px;max-height:290px;" controls>
+          <source src="{{ post.video.url }}">
+        </video>
+        {% endif %}
+        {% if post.link %}
+        <a href="{{ post.link }}" target="_blank" rel="noopener" class="pc-lnk">
+          <i class="bi bi-link-45deg fs-5"></i>{{ post.link|truncatechars:52 }}
+        </a>
+        {% endif %}
+
+        <!-- Reaction chips (показуємо якщо є лайки) -->
+        {% if post.like_count %}
+        <div class="rc-bar">
+          <span class="rc-chip {% for l in post.likes.all %}{% if l.user_id == request.user.id %}me{% endif %}{% endfor %}"
+                onclick="doLike('{{ post.pk }}','{% url 'like_post' post.pk %}')">
+            ❤️ <span id="lc{{ post.pk }}">{{ post.like_count }}</span>
+          </span>
+        </div>
+        {% endif %}
+
+        <!-- Stats -->
+        {% if post.like_count or post.comment_count %}
+        <div class="pc-stats">
+          <span>{% if not post.like_count %}<span style="opacity:.4;">❤️ 0</span>{% endif %}</span>
+          <span>{% if post.comment_count %}{{ post.comment_count }} коментар{{ post.comment_count|pluralize:",,ів" }}{% endif %}</span>
+        </div>
+        {% endif %}
+
+      </div><!-- pc-b -->
+
+      <!-- ── Action bar ── -->
+      <div class="pc-acts">
+
+        <!-- Like + reactions -->
+        <div class="position-relative" style="flex:1;">
+          <button class="pa like-btn w-100 {% for l in post.likes.all %}{% if l.user_id == request.user.id %}liked{% endif %}{% endfor %}"
+                  data-post-id="{{ post.pk }}" data-url="{% url 'like_post' post.pk %}"
+                  onmouseenter="showR(this)" onmouseleave="hideR(this)"
+                  onclick="doLike('{{ post.pk }}','{% url 'like_post' post.pk %}')">
+            <span class="pa-i">{% for l in post.likes.all %}{% if l.user_id == request.user.id %}❤️{% endif %}{% endfor %}{% if not post.likes.all %}🤍{% endif %}</span>
+            <span class="pa-n" id="lct{{ post.pk }}">{{ post.like_count }}</span>
+          </button>
+          <div class="rpop" id="rp{{ post.pk }}">
+            <button class="rb" onclick="qR('{{ post.pk }}','❤️','{% url 'like_post' post.pk %}')">❤️</button>
+            <button class="rb" onclick="qR('{{ post.pk }}','👍','{% url 'like_post' post.pk %}')">👍</button>
+            <button class="rb" onclick="qR('{{ post.pk }}','😂','{% url 'like_post' post.pk %}')">😂</button>
+            <button class="rb" onclick="qR('{{ post.pk }}','😮','{% url 'like_post' post.pk %}')">😮</button>
+            <button class="rb" onclick="qR('{{ post.pk }}','😢','{% url 'like_post' post.pk %}')">😢</button>
+            <button class="rb" onclick="qR('{{ post.pk }}','🔥','{% url 'like_post' post.pk %}')">🔥</button>
           </div>
-          {% endfor %}
-          <form method="post" action="{% url 'post_detail' post.pk %}" class="tt-comment-form">
-            {% csrf_token %}
-            <img src="{{ request.user.get_avatar_url }}" class="tt-comment-avatar" alt="">
-            <input type="text" name="content" placeholder="Коментар..." class="tt-comment-input" autocomplete="off">
-            <button type="submit" class="tt-comment-send"><i class="bi bi-send-fill"></i></button>
-          </form>
         </div>
 
-      </article>
-      {% endwith %}
-      {% empty %}
-      <div class="tt-empty">
-        <div class="tt-empty-icon">🌌</div>
-        <div class="tt-empty-title">Стрічка порожня</div>
-        <p>Будь першим хто опублікує щось круте!</p>
-        <a href="{% url 'search_users' %}" class="btn btn-primary">🔍 Знайти людей</a>
-      </div>
-      {% endfor %}
-    </div>
+        <!-- Comment -->
+        <button class="pa" onclick="togCB('{{ post.pk }}')" style="flex:1;">
+          <span class="pa-i">💬</span>
+          <span class="pa-n">{{ post.comment_count }}</span>
+        </button>
 
-  </main>
+        <!-- Repost -->
+        <form method="post" action="{% url 'repost' post.pk %}" style="flex:1;display:flex;">
+          {% csrf_token %}
+          <button type="submit" class="pa w-100">
+            <span class="pa-i">🔁</span>
+            <span class="pa-n d-none d-sm-inline">Поширити</span>
+          </button>
+        </form>
 
-  <!-- ── RIGHT SIDEBAR ──────────────────────────────────────── -->
-  <aside class="tt-right-sidebar d-none d-lg-block">
-
-    <!-- Who to follow -->
-    <div class="tt-widget">
-      <div class="tt-widget-title"><i class="bi bi-stars me-1" style="color:var(--yellow);"></i>Можливо знаєш</div>
-      {% for u in popular_users|slice:":6" %}
-      <div class="tt-suggest">
-        <a href="{% url 'profile' u.username %}">
-          <img src="{{ u.get_avatar_url }}" class="tt-suggest-avatar" alt="">
-        </a>
-        <div class="tt-suggest-info">
-          <div class="tt-suggest-name">{{ u.get_full_name|default:u.username }}</div>
-          <div class="tt-suggest-sub">@{{ u.username }}</div>
-        </div>
-        <a href="{% url 'follow_user' u.username %}" class="tt-follow-btn">+ Читати</a>
-      </div>
-      {% endfor %}
-    </div>
-
-    <!-- Trending -->
-    <div class="tt-widget mt-3">
-      <div class="tt-widget-title"><i class="bi bi-fire me-1" style="color:var(--orange);"></i>Трендові теги</div>
-      {% for tag, count in trending_tags %}
-      <div class="tt-trend">
-        <span class="tt-trend-tag">#{{ tag }}</span>
-        <span class="tt-trend-count">{{ count }}</span>
-      </div>
-      {% empty %}
-      <div class="tt-trend"><span class="tt-trend-tag">#НЕФК</span><span class="tt-trend-count">142</span></div>
-      <div class="tt-trend"><span class="tt-trend-tag">#Навчання</span><span class="tt-trend-count">89</span></div>
-      <div class="tt-trend"><span class="tt-trend-tag">#Рілси</span><span class="tt-trend-count">67</span></div>
-      <div class="tt-trend"><span class="tt-trend-tag">#ІТ</span><span class="tt-trend-count">54</span></div>
-      <div class="tt-trend"><span class="tt-trend-tag">#Спорт</span><span class="tt-trend-count">43</span></div>
-      {% endfor %}
-    </div>
-
-    <!-- My friends -->
-    {% if my_friends %}
-    <div class="tt-widget mt-3">
-      <div class="tt-widget-title">
-        <i class="bi bi-people-fill me-1" style="color:var(--p);"></i>Мої друзі
-        <a href="{% url 'friends' %}" class="ms-auto tt-widget-more">Всі →</a>
-      </div>
-      {% for friend in my_friends %}
-      <div class="tt-suggest">
-        <a href="{% url 'profile' friend.username %}">
-          <img src="{{ friend.get_avatar_url }}" class="tt-suggest-avatar" alt="">
-        </a>
-        <div class="tt-suggest-info">
-          <div class="tt-suggest-name">{{ friend.get_full_name|default:friend.username }}</div>
-          <div class="tt-suggest-sub">@{{ friend.username }}</div>
-        </div>
-        <a href="{% url 'conversations' %}" class="tt-follow-btn">💬</a>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-
-  </aside>
-</div>
-
-<!-- ══ COMPOSER MODAL ══════════════════════════════════════════ -->
-<div class="tt-composer-overlay" id="composer-overlay" onclick="closeComposer()" style="display:none;"></div>
-<div class="tt-composer-modal" id="composer-modal" style="display:none;">
-  <div class="tt-composer-header">
-    <span class="tt-composer-title">✨ Нова публікація</span>
-    <button class="tt-composer-close" onclick="closeComposer()">✕</button>
-  </div>
-  <form method="post" enctype="multipart/form-data" action="{% url 'feed' %}">
-    {% csrf_token %}
-
-    <div class="d-flex gap-3 mb-3">
-      <img src="{{ request.user.get_avatar_url }}" class="rounded-circle flex-shrink-0"
-           style="width:44px;height:44px;object-fit:cover;border:2px solid var(--border);" alt="">
-      <textarea name="content" class="tt-composer-textarea" id="composer-text"
-                placeholder="Що у тебе нового? Поділись зі спільнотою ✨"
-                maxlength="500"></textarea>
-    </div>
-
-    <!-- Image preview strip -->
-    <div class="tt-img-preview-strip" id="img-preview-strip"></div>
-
-    <!-- Media toolbar -->
-    <div class="tt-composer-toolbar">
-      <button type="button" class="tt-tool-btn" onclick="document.getElementById('img-file-input').click()" title="Фото">
-        🖼️ Фото
-      </button>
-      <button type="button" class="tt-tool-btn" onclick="document.getElementById('vid-file-input').click()" title="Відео">
-        🎬 Відео
-      </button>
-      <button type="button" class="tt-tool-btn" onclick="toggleEmojiPanel()" title="Emoji">
-        😄 Emoji
-      </button>
-      <div class="ms-auto d-flex align-items-center gap-2">
-        <span id="composer-char" class="tt-char-count">0/500</span>
-        <button type="submit" class="btn btn-primary btn-sm fw-700 px-4" id="post-submit-btn" disabled>
-          <i class="bi bi-send-fill me-1"></i>Опублікувати
+        <!-- Copy link -->
+        <button class="pa" onclick="cpLnk('{{ request.scheme }}://{{ request.get_host }}{% url 'post_detail' post.pk %}')"
+                style="flex:0 0 42px;" title="Копіювати">
+          <i class="bi bi-link" style="font-size:.86rem;"></i>
         </button>
       </div>
+
+      <!-- ── Comments section (inline) ── -->
+      <div class="pc-cbox" id="cb{{ post.pk }}">
+        {% for c in post.comments.all|slice:":4" %}
+        <div class="cc-row" style="animation-delay:{{ forloop.counter0 }}0ms;animation:fadeUp .25s ease both;">
+          <a href="{% url 'profile' c.author.username %}" style="flex-shrink:0;">
+            <img src="{{ c.author.get_avatar_url }}" class="rounded-circle"
+                 style="width:26px;height:26px;object-fit:cover;border:1.5px solid var(--divider);" alt="">
+          </a>
+          <div class="cc-bub">
+            <div class="cc-nm">
+              <a href="{% url 'profile' c.author.username %}" style="color:var(--text);text-decoration:none;">
+                {{ c.author.get_full_name|default:c.author.username }}
+              </a>
+              <span style="color:var(--muted);font-weight:400;font-size:.7rem;margin-left:.3rem;">{{ c.created_at|timesince }} тому</span>
+            </div>
+            <div class="cc-tx">{{ c.content }}</div>
+          </div>
+        </div>
+        {% endfor %}
+        {% if post.comment_count > 4 %}
+        <a href="{% url 'post_detail' post.pk %}" style="display:block;text-align:center;font-size:.78rem;color:var(--p);padding:.3rem 0;font-weight:600;text-decoration:none;">
+          Показати всі {{ post.comment_count }} коментарів →
+        </a>
+        {% endif %}
+        <form method="post" action="{% url 'post_detail' post.pk %}" class="cc-form">
+          {% csrf_token %}
+          <img src="{{ request.user.get_avatar_url }}" class="rounded-circle flex-shrink-0"
+               style="width:26px;height:26px;object-fit:cover;border:1.5px solid var(--divider);" alt="">
+          <input type="text" name="content" class="cc-inp" placeholder="Написати коментар..." autocomplete="off">
+          <button type="submit" class="btn btn-primary btn-sm" style="border-radius:9px;padding:.3rem .68rem;font-size:.78rem;flex-shrink:0;">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </form>
+      </div>
+
+    </article>
+    {% empty %}
+    <div class="fempty">
+      <div class="fe-ico">🌊</div>
+      <div class="fw-700 mb-1" style="color:var(--text);font-size:.97rem;">Стрічка порожня</div>
+      <p class="small mb-3" style="color:var(--muted);">Додай друзів або підпишись на людей, щоб бачити їхні пости</p>
+      <a href="{% url 'search_users' %}" class="btn btn-primary btn-sm fw-700" style="animation:popIn .5s ease .3s both;">
+        <i class="bi bi-search me-1"></i>Знайти людей
+      </a>
     </div>
+    {% endfor %}
+  </div>
 
-    <!-- Emoji panel -->
-    <div class="tt-emoji-panel" id="emoji-panel"></div>
+</main>
 
-    <!-- Hidden inputs -->
-    <input type="hidden" name="post_type" value="status">
-    <input type="file" name="image" id="img-file-input" accept="image/*" multiple class="d-none" onchange="previewImages(this)">
-    <input type="file" name="video" id="vid-file-input" accept="video/*" class="d-none">
-  </form>
+<!-- ═══ RIGHT — друзі, теми ══════════════════════════════════ -->
+<aside class="fr">
+
+  <!-- My friends -->
+  <div class="fr-card">
+    <div class="fr-head">
+      <span class="fr-ttl">Мої друзі</span>
+      <a href="{% url 'friends' %}" class="fr-all">
+        {% if pending_count %}<span style="color:var(--red);">+{{ pending_count }} </span>{% endif %}Всі →
+      </a>
+    </div>
+    {% for f in my_friends %}
+    <a href="{% url 'profile' f.username %}" class="fr-fri" style="animation:fadeRight .35s ease {{ forloop.counter0 }}0ms both;">
+      <div style="position:relative;flex-shrink:0;">
+        <img src="{{ f.get_avatar_url }}" class="rounded-circle"
+             style="width:32px;height:32px;object-fit:cover;border:1.5px solid var(--divider);" alt="">
+        <span style="position:absolute;bottom:0;right:0;width:8px;height:8px;border-radius:50%;background:var(--green);border:1.5px solid var(--card-solid);animation:pulseDot 2s ease infinite;"></span>
+      </div>
+      <div style="overflow:hidden;">
+        <div style="font-size:.83rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.get_full_name|default:f.username }}</div>
+        <div style="font-size:.7rem;color:var(--muted);">@{{ f.username }}</div>
+      </div>
+    </a>
+    {% empty %}
+    <div style="padding:.65rem .95rem .9rem;text-align:center;">
+      <div style="font-size:.82rem;color:var(--muted);margin-bottom:.48rem;">Друзів поки немає</div>
+      <a href="{% url 'search_users' %}" class="fr-fw" style="display:inline-block;">Знайти людей</a>
+    </div>
+    {% endfor %}
+    {% if pending_count %}
+    <a href="{% url 'friends' %}" style="display:flex;align-items:center;gap:.42rem;padding:.44rem .95rem .75rem;text-decoration:none;">
+      <i class="bi bi-person-exclamation" style="color:var(--red);font-size:.9rem;"></i>
+      <span style="font-size:.79rem;font-weight:700;color:var(--red);">{{ pending_count }} нових запит{{ pending_count|pluralize:",,ів" }}</span>
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Suggested -->
+  {% if popular_users %}
+  <div class="fr-card">
+    <div class="fr-head"><span class="fr-ttl">Можливо знаєш</span></div>
+    {% for u in popular_users|slice:":5" %}
+    <div class="fr-sug" style="animation:fadeRight .35s ease {{ forloop.counter0 }}0ms both;">
+      <a href="{% url 'profile' u.username %}" style="flex-shrink:0;">
+        <img src="{{ u.get_avatar_url }}" class="rounded-circle"
+             style="width:32px;height:32px;object-fit:cover;border:1.5px solid var(--divider);" alt="">
+      </a>
+      <div style="overflow:hidden;flex:1;">
+        <div style="font-size:.83rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ u.get_full_name|default:u.username }}</div>
+        <div style="font-size:.7rem;color:var(--muted);">@{{ u.username }}</div>
+      </div>
+      <a href="{% url 'follow_user' u.username %}" class="fr-fw">+ Читати</a>
+    </div>
+    {% endfor %}
+    <div style="padding-bottom:.65rem;"></div>
+  </div>
+  {% endif %}
+
+  <!-- Trending topics -->
+  <div class="fr-card">
+    <div class="fr-head"><span class="fr-ttl">🔥 Популярні теми</span></div>
+    <div class="fr-tr"><span class="fr-tag">#НЕМК</span><span class="fr-cnt">142</span></div>
+    <div class="fr-tr"><span class="fr-tag">#Навчання</span><span class="fr-cnt">89</span></div>
+    <div class="fr-tr"><span class="fr-tag">#Практика</span><span class="fr-cnt">67</span></div>
+    <div class="fr-tr"><span class="fr-tag">#ІТ</span><span class="fr-cnt">54</span></div>
+    <div class="fr-tr" style="padding-bottom:.78rem;"><span class="fr-tag">#Спорт</span><span class="fr-cnt">43</span></div>
+  </div>
+
+</aside>
 </div>
 
-<!-- ══ LIGHTBOX ════════════════════════════════════════════════ -->
-<div id="lightbox" onclick="closeLightbox()"
-     style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.95);
-            display:none;align-items:center;justify-content:center;">
-  <img id="lightbox-img" src="" alt=""
-       style="max-width:92vw;max-height:92vh;border-radius:12px;object-fit:contain;">
-  <button onclick="closeLightbox()" style="position:absolute;top:1rem;right:1rem;
-          background:rgba(255,255,255,.12);border:none;color:#fff;
-          width:40px;height:40px;border-radius:50%;font-size:1.1rem;cursor:pointer;">✕</button>
+<!-- Lightbox -->
+<div id="lbx" onclick="cLB()">
+  <img id="lbxi" src="" alt="">
+  <button class="lbx-x" onclick="cLB()"><i class="bi bi-x"></i></button>
 </div>
 
-<!-- Toast -->
-<div id="feed-toast-container"
-     style="position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);
-            z-index:10000;display:flex;flex-direction:column;align-items:center;
-            gap:.5rem;pointer-events:none;" aria-live="polite"></div>
+<!-- Toasts -->
+<div id="ftoasts"></div>
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// ── Emoji panel ───────────────────────────────────────────────
-(function() {
-  const EMOJIS = ['😂','❤️','🔥','👍','😍','🎉','💪','🤔','😎','🥳','💡','📚','⚡','🏆','😅','🙏','👏','✅','🚀','💯','🎓','🏫','📖','💻','🎵','🌟','🍕','☕','🌈','👨‍💻','🤖','⭐','💎','🎯','😢','🤣','😘','🤩','😡','🤯','🫡','💀','🫶','✨','🔬'];
-  const panel = document.getElementById('emoji-panel');
-  if (!panel) return;
-  EMOJIS.forEach(e => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.className = 'tt-emoji-btn'; b.textContent = e;
-    b.onclick = () => insertEmoji(e);
-    panel.appendChild(b);
-  });
+/* Emoji panel */
+(function(){
+  const E=['😂','❤️','🔥','👍','😍','🎉','💪','🤔','😎','🥳','💡','📚','⚡','🏆','😅','🙏','👏','✅','🚀','💯','✨','🎓','💻','🌟','🤖','😢','🤣','🫶','💙','🌊'];
+  const p=document.getElementById('cmpEP'); if(!p)return;
+  E.forEach(e=>{const b=document.createElement('button');b.type='button';b.className='ep-b';b.textContent=e;b.onclick=()=>insE(e);p.appendChild(b);});
 })();
 
-// ── Composer ─────────────────────────────────────────────────
-function openComposer() {
-  document.getElementById('composer-overlay').style.display = 'block';
-  document.getElementById('composer-modal').style.display = 'flex';
-  document.getElementById('composer-text').focus();
+/* Composer */
+let cO=false;
+function openCmp(){
+  if(cO)return; cO=true;
+  document.getElementById('cmpToggle').style.display='none';
+  document.getElementById('cmpBody').classList.add('open');
+  document.getElementById('cmpTa')?.focus();
 }
-function closeComposer() {
-  document.getElementById('composer-overlay').style.display = 'none';
-  document.getElementById('composer-modal').style.display = 'none';
-}
-
-const _ta = document.getElementById('composer-text');
-const _cc = document.getElementById('composer-char');
-const _sb = document.getElementById('post-submit-btn');
-if (_ta) {
-  _ta.addEventListener('input', function() {
-    const l = this.value.trim().length;
-    if (_cc) _cc.textContent = `${l}/500`;
-    if (_cc) _cc.style.color = l > 450 ? 'var(--red)' : l > 380 ? 'var(--yellow)' : 'var(--muted)';
-    if (_sb) _sb.disabled = l === 0;
-  });
-}
-
-function toggleEmojiPanel() {
-  document.getElementById('emoji-panel').classList.toggle('show');
-}
-function insertEmoji(e) {
-  if (!_ta) return;
-  const p = _ta.selectionStart;
-  _ta.value = _ta.value.slice(0, p) + e + _ta.value.slice(p);
-  _ta.dispatchEvent(new Event('input'));
-  _ta.focus();
-}
-
-// ── Image preview ─────────────────────────────────────────────
-function previewImages(input) {
-  const strip = document.getElementById('img-preview-strip');
-  strip.innerHTML = '';
-  strip.style.display = [...input.files].length ? 'flex' : 'none';
-  [...input.files].forEach(file => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const t = document.createElement('div');
-      t.className = 'tt-img-thumb';
-      t.innerHTML = `<img src="${e.target.result}" alt=""><button type="button" onclick="this.parentElement.remove()">✕</button>`;
-      strip.appendChild(t);
-    };
-    reader.readAsDataURL(file);
-  });
-  if (_sb) _sb.disabled = false;
-}
-
-// ── Comments toggle ───────────────────────────────────────────
-function toggleComments(id) {
-  const box = document.getElementById('comment-box-' + id);
-  if (!box) return;
-  const isHidden = box.style.display === 'none';
-  box.style.display = isHidden ? 'block' : 'none';
-  if (isHidden) box.querySelector('.tt-comment-input')?.focus();
-}
-
-// ── Feed filter ───────────────────────────────────────────────
-function filterFeed(mood, btn) {
-  document.querySelectorAll('.tt-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.tt-post').forEach(post => {
-    if (mood === 'all') { post.style.display = ''; return; }
-    const d = post.dataset.mood || 'all';
-    post.style.display = (d === mood || d === 'all') ? '' : 'none';
-  });
-}
-
-// ── Video play toggle ─────────────────────────────────────────
-function toggleVideoPlay(wrap) {
-  const video = wrap.querySelector('video');
-  const overlay = wrap.querySelector('.tt-play-overlay');
-  if (!video) return;
-  if (video.paused) {
-    video.muted = false;
-    video.play();
-    if (overlay) overlay.style.opacity = '0';
-  } else {
-    video.pause();
-    if (overlay) overlay.style.opacity = '1';
+document.addEventListener('click',e=>{
+  if(!cO)return;
+  if(!document.querySelector('.composer').contains(e.target)){
+    const t=document.getElementById('cmpTa');
+    if(t&&t.value.trim())return;
+    cO=false;
+    document.getElementById('cmpToggle').style.display='flex';
+    document.getElementById('cmpBody').classList.remove('open');
   }
-}
-function toggleMute(btn) {
-  const video = btn.closest('.tt-media-wrap')?.querySelector('video');
-  if (!video) return;
-  video.muted = !video.muted;
-  btn.innerHTML = video.muted ? '<i class="bi bi-volume-mute-fill"></i>' : '<i class="bi bi-volume-up-fill"></i>';
-}
+});
 
-// ── IntersectionObserver — autoplay video on scroll ───────────
-const videoObs = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    const video = e.target;
-    if (e.isIntersecting) {
-      video.play().catch(() => {});
-    } else {
-      video.pause();
-    }
+const cta=document.getElementById('cmpTa');
+const ccnt=document.getElementById('ccnt');
+const pbtn=document.getElementById('pbtn');
+if(cta)cta.addEventListener('input',function(){
+  const l=this.value.trim().length;
+  ccnt.textContent=`${l} / 500`;
+  ccnt.className='ccnt'+(l>450?' d':l>380?' w':'');
+  if(pbtn)pbtn.disabled=l===0;
+});
+document.querySelectorAll('.mood-chip').forEach(b=>{
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.mood-chip').forEach(x=>x.classList.remove('on'));
+    this.classList.add('on');
   });
-}, { threshold: 0.6 });
+});
+function chTy(v){document.getElementById('ptype').value=v;document.getElementById('cmpLn').classList.toggle('on',v==='link');}
+function togEP(){document.getElementById('cmpEP').classList.toggle('on');}
+function togDZ(){document.getElementById('cmpDZ').classList.toggle('on');}
+function insE(e){if(!cta)return;const p=cta.selectionStart;cta.value=cta.value.slice(0,p)+e+cta.value.slice(p);cta.dispatchEvent(new Event('input'));cta.focus();cta.setSelectionRange(p+e.length,p+e.length);}
+function doDrop(ev){ev.preventDefault();document.getElementById('cmpDZ').classList.remove('act');const ff=[...ev.dataTransfer.files].filter(f=>f.type.startsWith('image/'));if(!ff.length)return;const i=document.getElementById('imgI');const d=new DataTransfer();ff.forEach(f=>d.items.add(f));i.files=d.files;prevImg(i);}
+function prevImg(inp){const s=document.getElementById('cmpStrip');s.innerHTML='';s.classList.add('on');[...inp.files].forEach(f=>{const r=new FileReader();r.onload=e=>{const t=document.createElement('div');t.className='sth';t.innerHTML=`<img src="${e.target.result}" alt=""><button class="sth-x" onclick="this.parentElement.remove();chkS()" type="button">✕</button>`;s.appendChild(t);};r.readAsDataURL(f);});if(pbtn)pbtn.disabled=false;}
+function chkS(){const s=document.getElementById('cmpStrip');if(!s.children.length)s.classList.remove('on');}
 
-document.querySelectorAll('.tt-video').forEach(v => videoObs.observe(v));
+/* Filter */
+function flt(t,btn){document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');document.querySelectorAll('#posts article').forEach(a=>{if(t==='all'){a.style.display='';return;}const m=a.dataset.mood||'';a.style.display=(m===t)?'':'none';});}
 
-// ── Lightbox ──────────────────────────────────────────────────
-function openLightbox(src) {
-  const lb = document.getElementById('lightbox');
-  document.getElementById('lightbox-img').src = src;
-  lb.style.display = 'flex';
-}
-function closeLightbox() {
-  document.getElementById('lightbox').style.display = 'none';
-}
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+/* Comments */
+function togCB(pk){const b=document.getElementById('cb'+pk);if(b){b.classList.toggle('on');if(b.classList.contains('on'))b.querySelector('input')?.focus();}}
 
-// ── Copy link ─────────────────────────────────────────────────
-function copyPostLink(url) {
-  navigator.clipboard?.writeText(url).then(() => showFeedToast('Посилання скопійовано! 🔗'));
+/* Reactions hover */
+let _rt={};
+function showR(btn){const pk=btn.dataset.postId;const p=document.getElementById('rp'+pk);if(p){clearTimeout(_rt[pk]);p.classList.add('on');}}
+function hideR(btn){const pk=btn.dataset.postId;const p=document.getElementById('rp'+pk);if(p){_rt[pk]=setTimeout(()=>{if(!p.matches(':hover'))p.classList.remove('on');},180);}}
+
+/* Like AJAX */
+function doLike(pk,url){
+  const btn=document.querySelector(`[data-post-id="${pk}"].like-btn`);
+  if(!btn)return;
+  const was=btn.classList.contains('liked');
+  btn.classList.toggle('liked');
+  const ic=btn.querySelector('.pa-i');
+  if(ic)ic.textContent=was?'🤍':'❤️';
+  const els=[document.getElementById('lct'+pk),document.getElementById('lc'+pk)];
+  els.forEach(el=>{if(el){const n=parseInt(el.textContent)||0;el.textContent=was?Math.max(0,n-1):n+1;}});
+  fetch(url,{method:'POST',headers:{'X-CSRFToken':csrf(),'X-Requested-With':'XMLHttpRequest'}})
+    .then(r=>r.json()).then(d=>{
+      els.forEach(el=>{if(el)el.textContent=d.count;});
+      btn.classList.toggle('liked',!!d.liked);
+      if(ic)ic.textContent=d.liked?'❤️':'🤍';
+    }).catch(()=>{});
+}
+function qR(pk,em,url){
+  document.querySelectorAll('.rpop').forEach(p=>p.classList.remove('on'));
+  const btn=document.querySelector(`[data-post-id="${pk}"].like-btn`);
+  if(btn){btn.classList.add('liked');const ic=btn.querySelector('.pa-i');if(ic)ic.textContent=em;}
+  fetch(url,{method:'POST',headers:{'X-CSRFToken':csrf(),'X-Requested-With':'XMLHttpRequest'}})
+    .then(r=>r.json()).then(d=>{[document.getElementById('lct'+pk),document.getElementById('lc'+pk)].forEach(el=>{if(el)el.textContent=d.count;});}).catch(()=>{});
 }
 
-// ── Toast ─────────────────────────────────────────────────────
-function showFeedToast(msg) {
-  const c = document.getElementById('feed-toast-container');
-  const t = document.createElement('div');
-  t.className = 'tt-toast';
-  t.textContent = msg;
-  c.appendChild(t);
-  setTimeout(() => t.remove(), 2800);
-}
+/* Copy */
+function cpLnk(url){navigator.clipboard?.writeText(url).then(()=>fTst('✓ Посилання скопійовано'));}
+
+/* Lightbox */
+function openLB(s){document.getElementById('lbxi').src=s;document.getElementById('lbx').classList.add('on');document.body.style.overflow='hidden';}
+function cLB(){document.getElementById('lbx').classList.remove('on');document.body.style.overflow='';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')cLB();});
+
+/* Toast */
+function showFeedToast(m){fTst(m);}
+function fTst(m){const c=document.getElementById('ftoasts');const t=document.createElement('div');t.className='ftst';t.textContent=m;c.appendChild(t);setTimeout(()=>{t.style.transition='opacity .25s,transform .25s';t.style.opacity='0';t.style.transform='translateY(8px)';setTimeout(()=>t.remove(),280);},2200);}
+
+function csrf(){const c=document.cookie.split(';').find(x=>x.trim().startsWith('csrftoken='));return c?decodeURIComponent(c.split('=')[1]):'';}
 </script>
 {% endblock %}

@@ -35,31 +35,12 @@ def _create_notification(recipient, sender, notif_type, text, link=''):
 def feed_view(request):
     user = request.user
 
-    # TikTok-стиль: показуємо ВСІ пости від усіх юзерів (не тільки друзів)
-    # Але спочатку йдуть пости друзів/підписок, потім решта
-    friend_ids = list(
-        Friendship.get_friends(user).values_list('id', flat=True)
-    )
-    following_ids = list(
-        user.following.values_list('following_id', flat=True)
-    )
-    priority_ids = set(friend_ids + following_ids + [user.id])
-
-    # Всі пости — спочатку пріоритетні (друзі/підписки), потім решта
-    from django.db.models import Case, When, IntegerField
+    # Показуємо ВСІ пости без групи — щоб стрічка була жива
     posts = Post.objects.filter(
         group=None
-    ).select_related(
-        'author', 'original_post__author'
-    ).prefetch_related(
+    ).select_related('author', 'original_post__author').prefetch_related(
         'likes', 'comments'
-    ).annotate(
-        priority=Case(
-            When(author_id__in=priority_ids, then=0),
-            default=1,
-            output_field=IntegerField(),
-        )
-    ).order_by('priority', '-created_at')
+    ).order_by('-created_at')[:80]
 
     post_form = PostForm()
     comment_form = CommentForm()
@@ -76,20 +57,26 @@ def feed_view(request):
     from accounts.models import User as UserModel
     popular_users = UserModel.objects.exclude(id=user.id).order_by('-date_joined')[:8]
 
-    # Друзі поточного юзера для правого сайдбару
     my_friends = list(Friendship.get_friends(user).select_related()[:8])
 
-    # Pending incoming friend requests count
-    from friends.models import FriendRequest
+    from friends.models import FriendRequest, Friendship as FS
     pending_count = FriendRequest.objects.filter(to_user=user, status='pending').count()
 
+    # ID друзів для кнопок "Додати" в постах
+    friend_ids = set(Friendship.get_friends(user).values_list('id', flat=True))
+    sent_requests = set(FriendRequest.objects.filter(
+        from_user=user, status='pending'
+    ).values_list('to_user_id', flat=True))
+
     context = {
-        'posts': posts,
-        'post_form': post_form,
-        'comment_form': comment_form,
+        'posts':         posts,
+        'post_form':     post_form,
+        'comment_form':  comment_form,
         'popular_users': popular_users,
-        'my_friends': my_friends,
+        'my_friends':    my_friends,
         'pending_count': pending_count,
+        'friend_ids':    friend_ids,
+        'sent_requests': sent_requests,
     }
     return render(request, 'posts/feed.html', context)
 

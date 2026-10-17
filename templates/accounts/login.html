@@ -1,34 +1,11 @@
 {% extends 'base.html' %}
-{% load static %}
-{% block title %}Вхід — НЕФК Суспільство{% endblock %}
-
-{% block extra_css %}
-<style>
-.account-card {
-  display:flex;align-items:center;gap:.75rem;padding:.7rem 1rem;
-  border-radius:14px;border:1.5px solid var(--border);background:var(--card);
-  cursor:pointer;transition:all .2s;text-decoration:none;margin-bottom:.45rem;
-}
-.account-card:hover { border-color:var(--p);background:var(--hover);transform:translateY(-1px); }
-.account-avatar { width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--border); }
-.account-name { font-weight:700;font-size:.93rem;color:var(--text); }
-.account-role { font-size:.74rem;color:var(--muted); }
-.admin-badge { background:rgba(239,68,68,.15);color:#ef4444;padding:.1rem .45rem;border-radius:20px;font-size:.68rem;font-weight:700;margin-left:.3rem; }
-.step { display:none; }
-.step.active { display:block; }
-.selected-preview {
-  display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;
-  border-radius:14px;background:rgba(99,102,241,.08);
-  border:1.5px solid var(--p);margin-bottom:1.25rem;
-}
-</style>
-{% endblock %}
+{% block title %}Вхід — НЕМК Суспільство{% endblock %}
 
 {% block content %}
 <div class="auth-bg">
-  <div style="width:100%;max-width:460px;padding:0 1rem;">
+  <div style="width:100%;max-width:420px;padding:0 1rem;">
 
-    <!-- Logo -->
+    <!-- Logo / brand -->
     <div class="text-center mb-4">
       <div style="width:64px;height:64px;border-radius:20px;
                   background:linear-gradient(135deg,var(--p),var(--accent));
@@ -38,131 +15,57 @@
         <i class="bi bi-people-fill" style="color:#fff;"></i>
       </div>
       <h2 class="fw-900" style="color:var(--text);letter-spacing:-.5px;">Вітаємо назад</h2>
-      <p style="color:var(--muted);font-size:.9rem;">Оберіть акаунт або увійдіть вручну</p>
+      <p style="color:var(--muted);font-size:.9rem;">Увійди в свій акаунт НЕМК</p>
     </div>
 
+    <!-- Card -->
     <div class="page-glass-card p-4">
-
       {% if form.non_field_errors %}
-      <div class="alert alert-danger py-2 small mb-3 rounded-3">
+      <div class="alert alert-danger py-2 small mb-3 rounded-3" role="alert">
         <i class="bi bi-exclamation-triangle-fill me-1"></i>
         {{ form.non_field_errors|join:", " }}
       </div>
       {% endif %}
 
-      <!-- ══ КРОК 1: Список акаунтів ══ -->
-      <div class="step active" id="step-accounts">
-
-        {% if accounts %}
-        <!-- Адміни -->
-        <div class="mb-3">
-          <div style="font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;">
-            👑 Адміністратори
-          </div>
-          {% for acc in accounts %}{% if acc.is_admin %}
-          <div class="account-card"
-               onclick="pickAccount('{{ acc.username }}','{{ acc.full_name|escapejs }}','{{ acc.avatar }}',true)">
-            <img src="{{ acc.avatar }}" class="account-avatar" alt="">
-            <div class="flex-grow-1">
-              <div class="account-name">{{ acc.full_name }}</div>
-              <div class="account-role">@{{ acc.username }}<span class="admin-badge">Адмін</span></div>
-            </div>
-            <i class="bi bi-chevron-right" style="color:var(--muted);font-size:.8rem;"></i>
-          </div>
-          {% endif %}{% endfor %}
-        </div>
+      <form method="post" novalidate>
+        {% csrf_token %}
 
         <div class="mb-3">
-          <div style="font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;">
-            🎓 Студенти
-          </div>
-          <div style="max-height:260px;overflow-y:auto;padding-right:2px;">
-            {% for acc in accounts %}{% if not acc.is_admin %}
-            <div class="account-card"
-                 onclick="pickAccount('{{ acc.username }}','{{ acc.full_name|escapejs }}','{{ acc.avatar }}',false)">
-              <img src="{{ acc.avatar }}" class="account-avatar" alt="">
-              <div class="flex-grow-1">
-                <div class="account-name">{{ acc.full_name }}</div>
-                <div class="account-role">@{{ acc.username }}</div>
-              </div>
-              <i class="bi bi-chevron-right" style="color:var(--muted);font-size:.8rem;"></i>
-            </div>
-            {% endif %}{% endfor %}
-          </div>
-        </div>
-        {% endif %}
-
-        <div class="form-divider">або</div>
-        <button class="btn btn-outline-secondary w-100 py-2 fw-600"
-                style="border-radius:12px;" onclick="showStep('step-manual')">
-          <i class="bi bi-keyboard me-2"></i>Ввести логін вручну
-        </button>
-      </div>
-
-      <!-- ══ КРОК 2: Пароль для вибраного акаунту ══ -->
-      <div class="step" id="step-password">
-        <div class="selected-preview">
-          <img id="sel-avatar" src="" class="account-avatar" alt="">
-          <div class="flex-grow-1">
-            <div class="fw-700" id="sel-name" style="color:var(--text);"></div>
-            <div class="small" id="sel-uname" style="color:var(--muted);"></div>
-          </div>
-          <button onclick="showStep('step-accounts')" class="btn btn-sm"
-                  style="background:var(--hover);color:var(--muted);border-radius:8px;border:none;">
-            <i class="bi bi-arrow-left"></i>
-          </button>
+          <label for="{{ form.username.id_for_label }}" class="form-label">
+            <i class="bi bi-person me-1" style="color:var(--p);"></i>Логін
+          </label>
+          <input type="text" name="{{ form.username.html_name }}"
+                 id="{{ form.username.id_for_label }}"
+                 class="form-control{% if form.username.errors %} is-invalid{% endif %}"
+                 placeholder="Твій нікнейм"
+                 value="{{ form.username.value|default:'' }}"
+                 autocomplete="username" required>
+          {% if form.username.errors %}
+          <div class="text-danger small mt-1">{{ form.username.errors|join:", " }}</div>
+          {% endif %}
         </div>
 
-        <form method="post" novalidate>
-          {% csrf_token %}
-          <input type="hidden" name="username" id="hidden-username">
-          <div class="mb-4">
-            <label class="form-label">
-              <i class="bi bi-lock me-1" style="color:var(--p);"></i>Пароль
-            </label>
-            <input type="password" name="password" id="pass-input"
-                   class="form-control" placeholder="••••••••"
-                   autocomplete="current-password" required>
-          </div>
-          <button type="submit" class="btn btn-primary w-100 py-2 fw-700">
-            <i class="bi bi-box-arrow-in-right me-2"></i>Увійти
-          </button>
-        </form>
-      </div>
+        <div class="mb-4">
+          <label for="{{ form.password.id_for_label }}" class="form-label">
+            <i class="bi bi-lock me-1" style="color:var(--p);"></i>Пароль
+          </label>
+          <input type="password" name="{{ form.password.html_name }}"
+                 id="{{ form.password.id_for_label }}"
+                 class="form-control{% if form.password.errors %} is-invalid{% endif %}"
+                 placeholder="••••••••"
+                 autocomplete="current-password" required>
+          {% if form.password.errors %}
+          <div class="text-danger small mt-1">{{ form.password.errors|join:", " }}</div>
+          {% endif %}
+        </div>
 
-      <!-- ══ КРОК 3: Ручний ввід ══ -->
-      <div class="step" id="step-manual">
-        <button onclick="showStep('step-accounts')" class="btn btn-sm mb-3"
-                style="background:var(--hover);color:var(--muted);border-radius:8px;border:none;">
-          <i class="bi bi-arrow-left me-1"></i>Назад
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-700" style="font-size:.97rem;">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Увійти
         </button>
-        <form method="post" novalidate>
-          {% csrf_token %}
-          <div class="mb-3">
-            <label class="form-label">
-              <i class="bi bi-person me-1" style="color:var(--p);"></i>Логін
-            </label>
-            <input type="text" name="{{ form.username.html_name }}"
-                   class="form-control{% if form.username.errors %} is-invalid{% endif %}"
-                   placeholder="Твій нікнейм"
-                   value="{{ form.username.value|default:'' }}"
-                   autocomplete="username" required>
-          </div>
-          <div class="mb-4">
-            <label class="form-label">
-              <i class="bi bi-lock me-1" style="color:var(--p);"></i>Пароль
-            </label>
-            <input type="password" name="{{ form.password.html_name }}"
-                   class="form-control" placeholder="••••••••"
-                   autocomplete="current-password" required>
-          </div>
-          <button type="submit" class="btn btn-primary w-100 py-2 fw-700">
-            <i class="bi bi-box-arrow-in-right me-2"></i>Увійти
-          </button>
-        </form>
-      </div>
+      </form>
 
-      <div class="form-divider mt-3"></div>
+      <div class="form-divider">або</div>
+
       <p class="text-center mb-0 small" style="color:var(--muted);">
         Ще немає акаунту?
         <a href="{% url 'register' %}" class="fw-700" style="color:var(--p);text-decoration:none;">
@@ -170,24 +73,7 @@
         </a>
       </p>
     </div>
+
   </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-function showStep(id) {
-  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-function pickAccount(username, fullName, avatar, isAdmin) {
-  document.getElementById('hidden-username').value = username;
-  document.getElementById('sel-avatar').src = avatar;
-  document.getElementById('sel-name').textContent = fullName;
-  document.getElementById('sel-uname').textContent = '@' + username + (isAdmin ? ' · Адмін' : '');
-  showStep('step-password');
-  setTimeout(() => document.getElementById('pass-input').focus(), 100);
-}
-</script>
 {% endblock %}
